@@ -130,11 +130,11 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "users.authentication.JWTAuthentication",  # ruta a la clase que creaste
-    ]
+    ],
 }
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
-AUTH_USER_MODEL = 'users.User' 
+AUTH_USER_MODEL = "users.User"
