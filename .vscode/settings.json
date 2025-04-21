@@ -1,0 +1,7 @@
+{
+    "python.pythonPath": "path/to/your/python", // Cambia esto al path de tu intérprete de Python
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestArgs": ["--cov=.", "--cov-report=html"]
+}

@@ -1,4 +1,4 @@
-.PHONY: help runserver migrate makemigrations shell test lint format coverage check
+.PHONY: help runserver migrate makemigrations shell test lint format coverage check install
 
 help:
 	@echo "Comandos disponibles:"
@@ -16,6 +16,11 @@ help:
 	@echo "  resetdb           - Reinicia la base de datos (elimina todo)"
 	@echo "  cleandb           - Limpia la base de datos (elimina todos los datos)"
 	@echo "  help              - Muestra este mensaje de ayuda"
+	@echo "  install           - Instala las dependencias requeridas"
+
+install:
+	pip install -r requirements.txt
+	pip install pytest-cov
 
 runserver:
 	python manage.py runserver
@@ -36,7 +41,7 @@ test:
 lint:
 	black --check . --exclude 'env|migrations'
 	isort --check-only . --skip env
-	flake8 . --exclude=env,migrations,__pycache__
+	flake8 . 	
 
 format:
 	black . --exclude 'env|migrations'
@@ -69,4 +74,3 @@ resetdb:
 
 cleandb:
 	python manage.py flush
-
