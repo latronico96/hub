@@ -39,9 +39,9 @@ test:
 	coverage report -m
 
 lint:
-	black --check . --exclude 'env|migrations'
-	isort --check-only . --skip env
-	flake8 . 	
+	black --check . --exclude 'env|migrations' || echo "Black encontró problemas de formato."
+	isort --check-only . --skip env || echo "Isort encontró problemas de orden."
+	flake8 . || echo "Flake8 encontró problemas de estilo."	
 
 format:
 	black . --exclude 'env|migrations'

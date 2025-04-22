@@ -51,12 +51,11 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=[AllowAny],
     )
     def register(self, request):
-        first_name = request.data.get("first_name")
-        last_name = request.data.get("last_name")
+        name = request.data.get("name")
         email = request.data.get("email")
         password = request.data.get("password")
 
-        if not email or not password or not first_name or not last_name:
+        if not email or not password or not name:
             return Response(
                 {"detail": "Username, email, and password are required."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -71,8 +70,7 @@ class UserViewSet(viewsets.ModelViewSet):
             user = User.objects.create_user(
                 email=email,
                 password=password,  # This will be hashed by create_user
-                first_name=first_name,
-                last_name=last_name,
+                name=name,
             )
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -83,9 +81,27 @@ class UserViewSet(viewsets.ModelViewSet):
                 "user": {
                     "id": user.id,
                     "email": user.email,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
+                    "name": user.name,
                 },
             },
             status=status.HTTP_201_CREATED,
         )
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="me",
+    )
+    def me(self):
+        """
+        Endpoint to get the current user's information.
+        """
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)

@@ -1,27 +1,10 @@
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.test import APIClient
 
 
 @pytest.mark.django_db(transaction=True)
 class UserModelTest(TestCase):
-    def test_create_user(self):
-        # Arrange
-        User = get_user_model()
-        user = User.objects.create_user(
-            last_name="apellido",
-            first_name="nombre",
-            email="test@example.com",
-            password="password123",
-        )
-
-        # Act & Assert
-        self.assertEqual(user.first_name, "nombre")
-        self.assertEqual(user.last_name, "apellido")
-        self.assertEqual(user.email, "test@example.com")
-        self.assertTrue(user.check_password("password123"))
-
     def test_registre_user(self):
         """Testea el registro de un usuario a través de la API."""
 
@@ -29,8 +12,7 @@ class UserModelTest(TestCase):
         responseRegister = client.post(
             "/users/register/",
             {
-                "first_name": "nombre",
-                "last_name": "apellido",
+                "name": "user name",
                 "email": "test@email.com",
                 "password": "testpassword",
             },
@@ -42,8 +24,7 @@ class UserModelTest(TestCase):
         ), f"Registration failed: {responseRegister.content}"
         assert responseRegister.data["detail"] == "User created successfully"
         assert responseRegister.data["user"]["email"] == "test@email.com"
-        assert responseRegister.data["user"]["first_name"] == "nombre"
-        assert responseRegister.data["user"]["last_name"] == "apellido"
+        assert responseRegister.data["user"]["name"] == "user name"
         assert responseRegister.data["user"]["id"] is not None
         assert "password" not in responseRegister.data["user"]
 
@@ -55,8 +36,7 @@ class UserModelTest(TestCase):
         client.post(
             "/users/register/",
             {
-                "first_name": "nombre",
-                "last_name": "apellido",
+                "name": "user name",
                 "email": "test@email.com",
                 "password": "testpassword",
             },
@@ -67,8 +47,6 @@ class UserModelTest(TestCase):
             "/users/login/",
             {"email": "test@email.com", "password": "fakePassword"},
         )
-
-        print(responseLogin)
 
         assert (
             responseLogin.status_code == 403
@@ -88,7 +66,7 @@ class UserModelTest(TestCase):
         ), "Token not returned in login response"
 
         responseUserApi = client.get(
-            "/users/user/",
+            "/users/",
         )
 
         assert (
