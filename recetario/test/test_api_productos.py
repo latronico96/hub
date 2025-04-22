@@ -1,6 +1,7 @@
 import pytest
 
-from recetario.utils.test_helpers import setup_create_gramo, setup_create_kilogramo
+from recetario.utils.test_helpers import (setup_create_gramo,
+                                          setup_create_kilogramo)
 from users.utils.user_test_helpers import setup_registre_user_generate_token
 
 
