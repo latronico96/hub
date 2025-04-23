@@ -12,6 +12,22 @@ class Unidad(models.Model):
     def __str__(self):
         return self.nombre
 
+    def crear_unidades_por_defecto_para_usuario(user: User):
+        unidades_por_defecto = [
+            {"abreviacion": "kg", "nombre": "Kilogramo"},
+            {"abreviacion": "g", "nombre": "Gramo"},
+            {"abreviacion": "l", "nombre": "Litro"},
+            {"abreviacion": "ml", "nombre": "Mililitro"},
+            {"abreviacion": "unidad", "nombre": "Unidad"},
+        ]
+
+        for unidad in unidades_por_defecto:
+            Unidad.objects.create(
+                user=user,
+                abreviacion=unidad["abreviacion"],
+                nombre=unidad["nombre"],
+            )
+
 
 class Producto(models.Model):
     id = models.AutoField(primary_key=True)

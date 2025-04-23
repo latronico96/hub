@@ -40,8 +40,7 @@ def test_api_unidades():
     response = client.get("/recetario/unidades/", HTTP_AUTHORIZATION=f"Bearer {token}")
 
     assert response.status_code == 200
-    assert len(response.data) == 3
-    assert response.data[0]["nombre"] == "Gramos"
+    assert len(response.data) == 8  # 5 por defecto + 3 creadas en el test
 
     unidad1_id = responseUnidad1.data["id"]
     unidad3_id = responseUnidad3.data["id"]
@@ -54,7 +53,7 @@ def test_api_unidades():
     response = client.get("/recetario/unidades/", HTTP_AUTHORIZATION=f"Bearer {token}")
 
     assert response.status_code == 200
-    assert len(response.data) == 2
+    assert len(response.data) == 7
 
     responsePathUnidad1 = client.patch(
         f"/recetario/unidades/{unidad1_id}/",
