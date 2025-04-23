@@ -39,13 +39,13 @@ test:
 	coverage report -m
 
 lint:
-	black --check . --exclude 'env|migrations' || echo "Black encontró problemas de formato."
 	isort --check-only . --skip env || echo "Isort encontró problemas de orden."
+	black --check . --exclude 'env|migrations' || echo "Black encontró problemas de formato."
 	flake8 . || echo "Flake8 encontró problemas de estilo."	
 
 format:
-	black . --exclude 'env|migrations'
 	isort . --skip env
+	black . --exclude 'env|migrations'
 
 coverage:
 	coverage html
