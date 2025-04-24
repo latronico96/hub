@@ -52,7 +52,10 @@ jobs:
           echo "==================== FLAKE8 ===================="
           flake8 .
           echo "==================== PYLINT ===================="
-          pylint --load-plugins pylint_django --init-hook="import os; os.environ.setdefault('DJANGO_SETTINGS_MODULE', '${{ env.DJANGO_SETTINGS_MODULE }}')" $(git ls-files '*.py')
+          echo "::group::📌 Running pylint with custom config"
+          pylint --rcfile=.pylintrc hub/ recetario/ tests/ users/ core/
+          pylint_exit=$?
+          echo "::endgroup::"
           echo "==================== MYPY ===================="
           mypy --config-file pyproject.toml --install-types --non-interactive .
 
