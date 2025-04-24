@@ -46,6 +46,8 @@ jobs:
           isort --check-only .
           black --check .
           flake8 .
+          pylint --load-plugins pylint_django --django-settings-module=your_project.settings $(git ls-files '*.py')
+          mypy --install-types --non-interactive --config-file=mypy.ini .
 
       - name: Run tests
         run: |
