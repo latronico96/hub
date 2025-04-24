@@ -5,7 +5,7 @@ from users.utils.user_test_helpers import setup_registre_user_generate_token
 
 
 @pytest.mark.django_db(transaction=True)
-def test_productos():
+def test_productos() -> None:
     _, _, user = setup_registre_user_generate_token()
 
     unidad = Unidad.objects.create(nombre="Gramos", abreviacion="g", user=user)

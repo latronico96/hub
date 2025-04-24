@@ -5,7 +5,7 @@ from users.utils.user_test_helpers import setup_registre_user_generate_token
 
 
 @pytest.mark.django_db(transaction=True)
-def tests_api_productos():
+def tests_api_productos() -> None:
     client, token, user = setup_registre_user_generate_token()
     # Create Unidades
     unidad1 = setup_create_gramo(user)

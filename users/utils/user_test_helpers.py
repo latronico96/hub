@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 from users.models import User
 
 
-def setup_registre_user_generate_token():
+def setup_registre_user_generate_token() -> tuple[APIClient, str, User]:
     user = User.objects.create_user(
         name="user name",
         password="testpassword",

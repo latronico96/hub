@@ -1,26 +1,28 @@
-.PHONY: help runserver migrate makemigrations shell test lint format coverage check install
+.PHONY: help runserver migrate makemigrations shell test lint format coverage check install \
+        links updateDependences resetdb cleandb typecheck
 
 help:
 	@echo "Comandos disponibles:"
-	@echo "  runserver         - Levanta el servidor local (localhost:8000)"
-	@echo "  migrate           - Aplica migraciones"
-	@echo "  makemigrations    - Crea nuevas migraciones"
-	@echo "  shell             - Abre el shell de Django"
-	@echo "  test              - Corre los tests con coverage"
-	@echo "  lint              - Corre black, isort y flake8"
-	@echo "  format            - Formatea el código (black + isort)"
-	@echo "  coverage          - Genera reporte HTML de cobertura"
-	@echo "  check             - Corre linting + tests + coverage"
-	@echo "  links             - Muestra las URLs disponibles en el proyecto"
-	@echo "  updateDependences - Actualiza el archivo requirements.txt con las dependencias actuales"
-	@echo "  resetdb           - Reinicia la base de datos (elimina todo)"
-	@echo "  cleandb           - Limpia la base de datos (elimina todos los datos)"
-	@echo "  help              - Muestra este mensaje de ayuda"
-	@echo "  install           - Instala las dependencias requeridas"
+	@echo "  runserver          - Levanta el servidor local (localhost:8000)"
+	@echo "  migrate            - Aplica migraciones"
+	@echo "  makemigrations     - Crea nuevas migraciones"
+	@echo "  shell              - Abre el shell de Django"
+	@echo "  test               - Corre los tests con coverage"
+	@echo "  lint               - Corre black, isort, flake8, pylint y mypy"
+	@echo "  format             - Formatea el código (black + isort)"
+	@echo "  coverage           - Genera reporte HTML de cobertura"
+	@echo "  check              - Corre linting + tests + coverage"
+	@echo "  links              - Muestra las URLs disponibles en el proyecto"
+	@echo "  updateDependences  - Actualiza el archivo requirements.txt con las dependencias actuales"
+	@echo "  resetdb            - Reinicia la base de datos (elimina todo)"
+	@echo "  cleandb            - Limpia la base de datos (elimina todos los datos)"
+	@echo "  typecheck          - Corre mypy para chequeo de tipos"
+	@echo "  install            - Instala las dependencias requeridas"
+	@echo "  help               - Muestra este mensaje de ayuda"
 
 install:
 	pip install -r requirements.txt
-	pip install pytest-cov
+	pip install pytest pytest-cov black isort flake8 mypy pylint django-extensions
 
 runserver:
 	python manage.py runserver
@@ -39,9 +41,16 @@ test:
 	coverage report -m
 
 lint:
+	@echo ">>> Ejecutando isort..."
 	isort --check-only . --skip env || echo "Isort encontró problemas de orden."
+	@echo ">>> Ejecutando black..."
 	black --check . --exclude 'env|migrations' || echo "Black encontró problemas de formato."
-	flake8 . || echo "Flake8 encontró problemas de estilo."	
+	@echo ">>> Ejecutando flake8..."
+	flake8 . || echo "Flake8 encontró problemas de estilo."
+	@echo ">>> Ejecutando pylint..."
+	pylint --rcfile=.pylintrc hub/ recetario/ tests/ users/ core/ || true
+	@echo ">>> Ejecutando mypy..."
+	mypy . || true
 
 format:
 	isort . --skip env
@@ -51,16 +60,14 @@ coverage:
 	coverage html
 	@echo "Abrí htmlcov/index.html en tu navegador para ver el reporte."
 
-# ✅ Comando todo-en-uno
-check: lint test
-	coverage
+check: lint test coverage
 	@echo "Todo en uno: linting + tests + coverage"
 	@echo "Si todo salió bien, no hay errores."
 	@echo "Si hubo errores, revisá los mensajes anteriores para más detalles."
 	@echo "Si no hay errores, ¡felicitaciones! Todo está en orden."
 
 links:
-	python manage.py show_urls 
+	python manage.py show_urls
 
 updateDependences:
 	pip freeze > requirements.txt
@@ -73,4 +80,7 @@ resetdb:
 	python manage.py migrate
 
 cleandb:
-	python manage.py flush
+	python manage.py flush --no-input
+
+typecheck:
+	mypy .

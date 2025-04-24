@@ -5,10 +5,8 @@ from users.utils.user_test_helpers import setup_registre_user_generate_token
 
 
 @pytest.mark.django_db(transaction=True)
-def test_unidades():
+def test_unidades() -> None:
     _, _, user = setup_registre_user_generate_token()
-
-    unidadesDefault = Unidad.objects.count()
 
     data = [
         {"nombre": "Gramos", "abreviacion": "g"},
@@ -16,13 +14,13 @@ def test_unidades():
         {"nombre": "Mililitros", "abreviacion": "ml"},
     ]
 
-    unidadesCreadas = []
+    unidades_creadas = []
 
     for d in data:
         unidad = Unidad.objects.create(user=user, **d)
-        unidadesCreadas.append(unidad)
+        unidades_creadas.append(unidad)
 
-    unidades = Unidad.objects.filter(id__in=[u.id for u in unidadesCreadas]).order_by(
+    unidades = Unidad.objects.filter(id__in=[u.id for u in unidades_creadas]).order_by(
         "id"
     )
 

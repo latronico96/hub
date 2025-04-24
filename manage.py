@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
+from __future__ import annotations
+
 import os
 import sys
+from typing import Sequence
 
 
-def main(argv=None):
+def main(argv: Sequence[str] | None = None) -> None:
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hub.settings")
     try:
@@ -15,7 +18,7 @@ def main(argv=None):
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-    execute_from_command_line(argv or sys.argv)
+    execute_from_command_line(list(argv or sys.argv))
 
 
 if __name__ == "__main__":

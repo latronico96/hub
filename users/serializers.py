@@ -1,9 +1,12 @@
+from typing import Any
+
 from rest_framework import serializers
 
 from .models import User
 
 
-class UserSerializer(serializers.ModelSerializer):
+# pylint: disable=too-few-public-methods
+class UserSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
         fields = [
@@ -15,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_admin",
         ]
 
-        def to_representation(self, instance):
-            representation = super().to_representation(instance)
-            representation.pop("password", None)  # Elimina 'password' si existe
-            return representation
+    def to_representation(self, instance: User) -> dict[str, Any]:
+        representation = super().to_representation(instance)
+        representation.pop("password", None)
+        return representation

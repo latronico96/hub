@@ -4,7 +4,7 @@ from users.utils.user_test_helpers import setup_registre_user_generate_token
 
 
 @pytest.mark.django_db(transaction=True)
-def test_api_unidades():
+def test_api_unidades() -> None:
     client, token, _ = setup_registre_user_generate_token()
 
     responseUnidad1 = client.post(

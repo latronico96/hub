@@ -3,5 +3,7 @@
     "python.testing.pytestEnabled": true,
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestArgs": ["--cov=.", "--cov-report=html"]
+    "python.testing.pytestArgs": ["--cov=.", "--cov-report=html"],
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintArgs": ["--rcfile=.pylintrc"]
 }

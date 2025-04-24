@@ -9,7 +9,7 @@ from users.models import User
 
 
 class TestJWTAuthentication(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.auth = JWTAuthentication()
         self.valid_token = jwt.encode({"id": 1}, "secret", algorithm="HS256")
         self.expired_token = jwt.encode(
@@ -17,26 +17,24 @@ class TestJWTAuthentication(TestCase):
         )
         self.invalid_token = "invalid.token.value"
 
-    @patch("users.models.User.objects.get")
-    def test_authenticate_missing_authorization_header(self, mock_get):
+    def test_authenticate_missing_authorization_header(self) -> None:
         request = MagicMock()
         request.headers = {}
         self.assertIsNone(self.auth.authenticate(request))
 
-    @patch("users.models.User.objects.get")
-    def test_authenticate_invalid_token_format(self, mock_get):
+    def test_authenticate_invalid_token_format(self) -> None:
         request = MagicMock()
         request.headers = {"Authorization": "InvalidHeader"}
         self.assertIsNone(self.auth.authenticate(request))
 
-    def test_authenticate_expired_token(self):
+    def test_authenticate_expired_token(self) -> None:
         request = MagicMock()
         request.headers = {"Authorization": f"Bearer {self.expired_token}"}
         with self.assertRaises(AuthenticationFailed) as context:
             self.auth.authenticate(request)
         self.assertEqual(str(context.exception), "Token expired")
 
-    def test_authenticate_invalid_token(self):
+    def test_authenticate_invalid_token(self) -> None:
         request = MagicMock()
         request.headers = {"Authorization": f"Bearer {self.invalid_token}"}
         with self.assertRaises(AuthenticationFailed) as context:
@@ -44,7 +42,7 @@ class TestJWTAuthentication(TestCase):
         self.assertEqual(str(context.exception), "Invalid token")
 
     @patch("users.models.User.objects.get")
-    def test_authenticate_user_not_found(self, mock_get):
+    def test_authenticate_user_not_found(self, mock_get: MagicMock) -> None:
         mock_get.side_effect = User.DoesNotExist
         request = MagicMock()
         request.headers = {"Authorization": f"Bearer {self.valid_token}"}
@@ -53,22 +51,24 @@ class TestJWTAuthentication(TestCase):
         self.assertEqual(str(context.exception), "User not found")
 
     @patch("users.models.User.objects.get")
-    def test_authenticate_success(self, mock_get):
+    def test_authenticate_success(self, mock_get: MagicMock) -> None:
         mock_user = MagicMock()
         mock_get.return_value = mock_user
         request = MagicMock()
         request.headers = {"Authorization": f"Bearer {self.valid_token}"}
-        user, _ = self.auth.authenticate(request)
+        auth_result = self.auth.authenticate(request)
+        assert auth_result is not None
+        user, _ = auth_result
         self.assertEqual(user, mock_user)
 
-    def test_authenticate_expired_token_exception(self):
+    def test_authenticate_expired_token_exception(self) -> None:
         request = MagicMock()
         request.headers = {"Authorization": f"Bearer {self.expired_token}"}
         with self.assertRaises(AuthenticationFailed) as context:
             self.auth.authenticate(request)
         self.assertEqual(str(context.exception), "Token expired")
 
-    def test_authenticate_invalid_token_exception(self):
+    def test_authenticate_invalid_token_exception(self) -> None:
         request = MagicMock()
         request.headers = {"Authorization": f"Bearer {self.invalid_token}"}
         with self.assertRaises(AuthenticationFailed) as context:
@@ -76,7 +76,7 @@ class TestJWTAuthentication(TestCase):
         self.assertEqual(str(context.exception), "Invalid token")
 
     @patch("users.models.User.objects.get")
-    def test_authenticate_user_not_found_exception(self, mock_get):
+    def test_authenticate_user_not_found_exception(self, mock_get: MagicMock) -> None:
         mock_get.side_effect = User.DoesNotExist
         request = MagicMock()
         request.headers = {"Authorization": f"Bearer {self.valid_token}"}

@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+from typing import Any
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 
 
-class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
+class UserManager(BaseUserManager["User"]):
+    def create_user(
+        self, email: str, password: str | None = None, **extra_fields: Any
+    ) -> "User":
         if not email:
             raise ValueError("The Email field must be set")
         email = self.normalize_email(email)
@@ -12,7 +18,9 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None, **extra_fields):
+    def create_superuser(
+        self, email: str, password: str | None = None, **extra_fields: Any
+    ) -> "User":
         extra_fields.setdefault("is_admin", True)
         return self.create_user(email, password, **extra_fields)
 
@@ -24,20 +32,20 @@ class User(AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
 
-    objects = UserManager()
+    objects: UserManager = UserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name}"
 
-    def has_perm(self, perm, obj=None):
+    def has_perm(self, _: str, __: Any = None) -> bool:
         return True
 
-    def has_module_perms(self, app_label):
+    def has_module_perms(self, _: str) -> bool:
         return True
 
     @property
-    def is_staff(self):
+    def is_staff(self) -> bool:
         return self.is_admin

@@ -7,20 +7,22 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from .models import User
 from .serializers import UserSerializer
 
 
-class UserViewSet(viewsets.ModelViewSet):
+# pylint: disable=too-many-ancestors
+class UserViewSet(viewsets.ModelViewSet[User]):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
     @action(
         detail=False, methods=["post"], url_path="login", permission_classes=[AllowAny]
     )
-    def login(self, request):
+    def login(self, request: Request) -> Response:
         email = request.data.get("email")
         password = request.data.get("password")
 
@@ -50,7 +52,7 @@ class UserViewSet(viewsets.ModelViewSet):
         url_path="register",
         permission_classes=[AllowAny],
     )
-    def register(self, request):
+    def register(self, request: Request) -> Response:
         name = request.data.get("name")
         email = request.data.get("email")
         password = request.data.get("password")
@@ -69,7 +71,7 @@ class UserViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.create_user(
                 email=email,
-                password=password,  # This will be hashed by create_user
+                password=password,
                 name=name,
             )
         except ValidationError as e:
@@ -92,7 +94,7 @@ class UserViewSet(viewsets.ModelViewSet):
         methods=["get"],
         url_path="me",
     )
-    def me(self):
+    def me(self) -> Response:
         """
         Endpoint to get the current user's information.
         """

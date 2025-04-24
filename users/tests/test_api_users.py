@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 
 @pytest.mark.django_db(transaction=True)
 class UserModelTest(TestCase):
-    def test_registre_user(self):
+    def test_registre_user(self) -> None:
         """Testea el registro de un usuario a través de la API."""
 
         client = APIClient()
@@ -28,7 +28,7 @@ class UserModelTest(TestCase):
         assert responseRegister.data["user"]["id"] is not None
         assert "password" not in responseRegister.data["user"]
 
-    def test_login_user(self):
+    def test_login_user(self) -> None:
         """Testea el inicio de sesión de un usuario a través de la API."""
 
         client = APIClient()

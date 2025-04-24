@@ -1,3 +1,7 @@
+"""
+Este módulo define la configuración de la aplicación 'core' para el proyecto Django.
+"""
+
 from django.apps import AppConfig
 
 

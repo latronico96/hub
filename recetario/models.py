@@ -1,6 +1,13 @@
+from typing import List, TypedDict
+
 from django.db import models
 
 from users.models import User
+
+
+class UnidadPorDefecto(TypedDict):
+    abreviacion: str
+    nombre: str
 
 
 class Unidad(models.Model):
@@ -9,11 +16,12 @@ class Unidad(models.Model):
     nombre = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="unidades")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.nombre
 
-    def crear_unidades_por_defecto_para_usuario(user: User):
-        unidades_por_defecto = [
+    @staticmethod
+    def crear_unidades_por_defecto_para_usuario(user: User) -> None:
+        unidades_por_defecto: List[UnidadPorDefecto] = [
             {"abreviacion": "kg", "nombre": "Kilogramo"},
             {"abreviacion": "g", "nombre": "Gramo"},
             {"abreviacion": "l", "nombre": "Litro"},
@@ -38,7 +46,7 @@ class Producto(models.Model):
     )
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="productos")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.nombre
 
 
@@ -48,7 +56,7 @@ class Receta(models.Model):
     descripcion = models.TextField(blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="recetas")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.nombre
 
 
@@ -68,5 +76,5 @@ class Ingrediente(models.Model):
         User, on_delete=models.PROTECT, related_name="ingredientes"
     )
 
-    def __str__(self):
-        return self.nombre
+    def __str__(self) -> str:
+        return f"{self.cantidad} {self.unidad.abreviacion} de {self.producto.nombre}"

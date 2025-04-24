@@ -1,16 +1,18 @@
+from typing import Any, Dict, List
+
 from rest_framework import serializers
 
 from .models import Ingrediente, Producto, Receta, Unidad
 
 
-class UnidadSerializer(serializers.ModelSerializer):
+class UnidadSerializer(serializers.ModelSerializer[Unidad]):
     class Meta:
         model = Unidad
         fields = ["id", "nombre", "abreviacion"]
         read_only_fields = ["id"]
 
 
-class ProductoSerializer(serializers.ModelSerializer):
+class ProductoSerializer(serializers.ModelSerializer[Producto]):
     unidad = serializers.PrimaryKeyRelatedField(queryset=Unidad.objects.all())
 
     class Meta:
@@ -19,7 +21,7 @@ class ProductoSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
-class IngredienteSerializer(serializers.ModelSerializer):
+class IngredienteSerializer(serializers.ModelSerializer[Ingrediente]):
     producto = serializers.PrimaryKeyRelatedField(queryset=Producto.objects.all())
     unidad = serializers.PrimaryKeyRelatedField(queryset=Unidad.objects.all())
 
@@ -29,7 +31,7 @@ class IngredienteSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
-class RecetaSerializer(serializers.ModelSerializer):
+class RecetaSerializer(serializers.ModelSerializer[Receta]):
     ingredientes = IngredienteSerializer(many=True)
 
     class Meta:
@@ -37,8 +39,8 @@ class RecetaSerializer(serializers.ModelSerializer):
         fields = ["id", "nombre", "descripcion", "ingredientes"]
         read_only_fields = ["id"]
 
-    def create(self, validated_data):
-        ingredientes_data = validated_data.pop("ingredientes")
+    def create(self, validated_data: Dict[str, Any]) -> Receta:
+        ingredientes_data: List[Dict[str, Any]] = validated_data.pop("ingredientes")
         receta = Receta.objects.create(**validated_data)
         user = self.context["request"].user
 
@@ -48,7 +50,7 @@ class RecetaSerializer(serializers.ModelSerializer):
 
         return receta
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Receta, validated_data: Dict[str, Any]) -> Receta:
         user = self.context["request"].user
 
         ingredientes_data = validated_data.pop("ingredientes", [])
