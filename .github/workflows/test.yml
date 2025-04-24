@@ -27,6 +27,7 @@ jobs:
       DB_PASSWORD: password
       DB_HOST: localhost
       PYTHONPATH: ${{ github.workspace }}
+      DJANGO_SETTINGS_MODULE: hub.settings
 
     steps:
       - uses: actions/checkout@v3
@@ -47,7 +48,7 @@ jobs:
           isort --check-only .
           black --check .
           flake8 .
-          pylint --load-plugins pylint_django --django-settings-module=your_project.settings $(git ls-files '*.py')
+          pylint --load-plugins pylint_django --init-hook="import os; os.environ.setdefault('DJANGO_SETTINGS_MODULE', '${{ env.DJANGO_SETTINGS_MODULE }}')" $(git ls-files '*.py')
           mypy --install-types --non-interactive --config-file=mypy.ini .
 
       - name: Run tests
