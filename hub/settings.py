@@ -15,10 +15,10 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    BASE_DIR / "static",
 ]
 
 # Quick-start development settings - unsuitable for production
@@ -64,7 +64,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "hub.urls"
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",    
+    "http://localhost:3000",
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -166,19 +166,19 @@ AUTHENTICATION_BACKENDS = [
 AUTH_USER_MODEL = "users.User"
 
 LOGGING = {
-    'version': 1,
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': str(BASE_DIR) + '/logs/debug.log',
+    "version": 1,
+    "handlers": {
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": str(BASE_DIR) + "/logs/debug.log",
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
+    "loggers": {
+        "django": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+            "propagate": True,
         },
     },
 }
