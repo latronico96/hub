@@ -18,6 +18,7 @@ help:
 	@echo "  cleandb            - Limpia la base de datos (elimina todos los datos)"
 	@echo "  typecheck          - Corre mypy para chequeo de tipos"
 	@echo "  install            - Instala las dependencias requeridas"
+	@echo "  createsuperuser    - Crea un superusuario para el admin de Django"
 	@echo "  help               - Muestra este mensaje de ayuda"
 
 install:
@@ -84,3 +85,8 @@ cleandb:
 
 typecheck:
 	mypy .
+
+createsuperuser:
+	@echo "Creando superusuario..."
+	python manage.py createsuperuser --email test@admin.com --name Admin || \
+	python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); user = User.objects.create_superuser(email='test@admin.com', password='admin', name='Admin'); user.set_password('admin'); user.save()"
