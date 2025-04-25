@@ -5,4 +5,6 @@ __pycache__/
 .coverage
 htmlcov.xml
 htmlcov/
-logs/debug.log
+!logs/
+!logs/.gitkeep  # Ensure .gitkeep is not ignored
+logs/*.log
