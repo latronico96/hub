@@ -15,6 +15,11 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -25,11 +30,12 @@ SECRET_KEY = "django-insecure-mfqy7^=&$q%k!2ec_98w7quqk!2yy!wbb6z^h1th0c02io*9n$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["http://localhost:3600/"]
-
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+]
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -38,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
+    "corsheaders",
     "rest_framework",
     "core",
     "users",
@@ -46,15 +53,32 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 ROOT_URLCONF = "hub.urls"
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",    
+]
+
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
+    "x-csrftoken",
+    "credentials",
+    "accept",
+    "accept-encoding",
+    "origin",
+    "user-agent",
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 TEMPLATES = [
     {
@@ -131,7 +155,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "users.authentication.JWTAuthentication",  # ruta a la clase que creaste
+        "users.authentication.JWTAuthentication",
     ],
 }
 
@@ -140,3 +164,21 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 AUTH_USER_MODEL = "users.User"
+
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': str(BASE_DIR) + '/logs/debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
