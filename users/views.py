@@ -69,7 +69,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
             )
 
         try:
-            user = User.objects.create_user(
+            User.objects.create_user(
                 email=email,
                 password=password,
                 name=name,
@@ -77,17 +77,19 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(
-            {
-                "detail": "User created successfully",
-                "user": {
-                    "id": user.id,
-                    "email": user.email,
-                    "name": user.name,
-                },
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        user_logged = authenticate(request, username=email, password=password)
+
+        if not user_logged:
+            raise AuthenticationFailed("Invalid credentials")
+
+        payload = {
+            "id": user_logged.id,
+            "exp": datetime.datetime.now() + datetime.timedelta(hours=24),
+            "iat": datetime.datetime.now(),
+        }
+        token = jwt.encode(payload, "secret", algorithm="HS256")
+
+        return Response({"token": token})
 
     @action(
         detail=False,

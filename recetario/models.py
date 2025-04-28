@@ -17,7 +17,7 @@ class Unidad(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="unidades")
 
     def __str__(self) -> str:
-        return self.nombre
+        return str(self.nombre)
 
     @staticmethod
     def crear_unidades_por_defecto_para_usuario(user: User) -> None:
@@ -47,7 +47,7 @@ class Producto(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="productos")
 
     def __str__(self) -> str:
-        return self.nombre
+        return str(self.nombre)
 
 
 class Receta(models.Model):
@@ -57,7 +57,7 @@ class Receta(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="recetas")
 
     def __str__(self) -> str:
-        return self.nombre
+        return str(self.nombre)
 
 
 class Ingrediente(models.Model):
