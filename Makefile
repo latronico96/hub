@@ -49,7 +49,7 @@ lint:
 	@echo ">>> Ejecutando flake8..."
 	flake8 . || echo "Flake8 encontró problemas de estilo."
 	@echo ">>> Ejecutando pylint..."
-	pylint --rcfile=.pylintrc hub/ recetario/ tests/ users/ core/ || true
+	pylint --rcfile=.pylintrc hub/ recetario/ tests/ users/ || true
 	@echo ">>> Ejecutando mypy..."
 	mypy . || true
 

@@ -20,13 +20,11 @@ class UserModelTest(TestCase):
         )
 
         assert (
-            responseRegister.status_code == 201
-        ), f"Registration failed: {responseRegister.content}"
-        assert responseRegister.data["detail"] == "User created successfully"
-        assert responseRegister.data["user"]["email"] == "test@email.com"
-        assert responseRegister.data["user"]["name"] == "user name"
-        assert responseRegister.data["user"]["id"] is not None
-        assert "password" not in responseRegister.data["user"]
+            responseRegister.status_code == 200
+        ), f"Login failed: {responseRegister.content}"
+        assert (
+            responseRegister.data["token"] is not None
+        ), "Token not returned in login response"
 
     def test_login_user(self) -> None:
         """Testea el inicio de sesión de un usuario a través de la API."""

@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     "django_extensions",
     "corsheaders",
     "rest_framework",
-    "core",
     "users",
     "recetario",
 ]
@@ -190,7 +189,13 @@ if not DEBUG:
         },
     }
 
-
+EMAIL_BACKEND: str | None = None
+EMAIL_HOST: str | None = None
+EMAIL_HOST_PASSWORD: str | None = None
+EMAIL_HOST_USER: str | None = None
+EMAIL_PORT: int | None = None
+EMAIL_USE_TLS: bool | None = None
+EMAIL_HOST_PASSWORD: str | None = None
 if running_tests():
     EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 else:

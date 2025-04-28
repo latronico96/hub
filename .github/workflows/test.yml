@@ -52,7 +52,7 @@ jobs:
           echo "==================== FLAKE8 ===================="
           flake8 .
           echo "==================== PYLINT ===================="
-          pylint --rcfile=.pylintrc hub/ recetario/ tests/ users/ core/
+          pylint --rcfile=.pylintrc hub/ recetario/ tests/ users/
           pylint_exit=$?
           echo "==================== MYPY ===================="
           mypy --config-file pyproject.toml --install-types --non-interactive .
