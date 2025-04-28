@@ -189,13 +189,12 @@ if not DEBUG:
         },
     }
 
-EMAIL_BACKEND: str | None = None
-EMAIL_HOST: str | None = None
-EMAIL_HOST_PASSWORD: str | None = None
-EMAIL_HOST_USER: str | None = None
-EMAIL_PORT: int | None = None
-EMAIL_USE_TLS: bool | None = None
-EMAIL_HOST_PASSWORD: str | None = None
+EMAIL_BACKEND: str
+EMAIL_HOST: str
+EMAIL_HOST_PASSWORD: str
+EMAIL_HOST_USER: str
+EMAIL_PORT: int
+EMAIL_USE_TLS: bool
 if running_tests():
     EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 else:
