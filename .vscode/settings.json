@@ -1,9 +1,18 @@
 {
-    "python.pythonPath": "path/to/your/python", // Cambia esto al path de tu intérprete de Python
+    "python.pythonPath": "path/to/your/python",  // Cambia esto si es necesario
     "python.testing.pytestEnabled": true,
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestArgs": ["--cov=.", "--cov-report=html"],
+    "python.testing.pytestArgs": ["--cov=.", "--cov-report=html", "recetario/test"],
     "python.linting.pylintEnabled": true,
-    "python.linting.pylintArgs": ["--rcfile=.pylintrc"]
+    "python.linting.pylintArgs": ["--rcfile=.pylintrc"],
+    "terminal.integrated.env.windows": {
+        "ENVIRONMENT": "test"
+    },
+    "terminal.integrated.env.linux": {
+        "ENVIRONMENT": "test"
+    },
+    "terminal.integrated.env.osx": {
+        "ENVIRONMENT": "test"
+    }
 }

@@ -28,7 +28,7 @@ jobs:
       DB_HOST: localhost
       PYTHONPATH: ${{ github.workspace }}
       DJANGO_SETTINGS_MODULE: hub.settings
-
+      RUNNING_TESTS: "1"
     steps:
       - uses: actions/checkout@v3
 

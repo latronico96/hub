@@ -49,7 +49,7 @@ class EmailSender:
         subjet: str,
     ) -> None:
         # Renderizar el template
-        env = Environment(loader=FileSystemLoader("recetario/email/templates"))
+        env = Environment(loader=FileSystemLoader("hub/email/templates"))
         template = env.get_template(template_file_name + ".html")
         html_contenido = template.render(**variables)
 

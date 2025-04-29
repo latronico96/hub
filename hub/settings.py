@@ -10,15 +10,25 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 import sys
 from pathlib import Path
 
+# Evaluate if the application is running in a test environment
+is_testing:bool = (
+    "test" in sys.argv or 
+    "pytest" in sys.argv or 
+    os.getenv("RUNNING_TESTS") == 1 or
+    os.getenv("RUNNING_TESTS") == "1" or
+    os.getenv("DJANGO_SETTINGS_MODULE") == "hub.settings.test" or
+    os.getenv("DJANGO_SETTINGS_MODULE") == "user.settings.test" or
+    os.getenv("DJANGO_SETTINGS_MODULE") == "recetario.settings.test" or
+    os.environ.get("PYTEST_CURRENT_TEST") is not None or
+    os.getenv("ENVIRONMENT") == "test"
+)
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-def running_tests() -> bool:
-    return "test" in sys.argv
 
 
 STATIC_URL = "/static/"
@@ -195,8 +205,13 @@ EMAIL_HOST_PASSWORD: str
 EMAIL_HOST_USER: str
 EMAIL_PORT: int
 EMAIL_USE_TLS: bool
-if running_tests():
+if is_testing:
     EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    EMAIL_HOST = ""
+    EMAIL_PORT = 0
+    EMAIL_USE_TLS = False
+    EMAIL_HOST_USER = ""
+    EMAIL_HOST_PASSWORD = ""
 else:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = "smtp.zoho.com"
