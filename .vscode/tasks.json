@@ -8,7 +8,8 @@
             "args": [
                 "manage.py",
                 "test",
-                "--ds=hub.settings"
+                "--ds=hub.settings",
+                "-s"
             ],
             "group": {
                 "kind": "test",

@@ -20,12 +20,23 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
       DB_NAME: testdb
       DB_USER: user
       DB_PASSWORD: password
       DB_HOST: localhost
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
       PYTHONPATH: ${{ github.workspace }}
       DJANGO_SETTINGS_MODULE: hub.settings
       RUNNING_TESTS: "1"

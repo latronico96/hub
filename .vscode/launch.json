@@ -6,7 +6,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/manage.py",
-            "args": ["test", "--ds=hub.settings"],
+            "args": ["test", "--ds=hub.settings", "-s"],
             "console": "integratedTerminal",
             "env": {
                 "ENVIRONMENT": "test",

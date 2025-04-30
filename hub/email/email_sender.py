@@ -1,11 +1,15 @@
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from typing import Any
 
+from django.core.mail import EmailMultiAlternatives
 from jinja2 import Environment, FileSystemLoader
 
-from hub.settings import EMAIL_HOST, EMAIL_HOST_PASSWORD, EMAIL_HOST_USER, EMAIL_PORT
+from hub.settings import (
+    EMAIL_HOST,
+    EMAIL_HOST_PASSWORD,
+    EMAIL_HOST_USER,
+    EMAIL_PORT,
+    STATIC_FRONTEND_URL,
+)
 from users.models import User
 
 
@@ -46,24 +50,30 @@ class EmailSender:
         template_file_name: str,
         email_destinatario: str,
         variables: dict[str, Any],
-        subjet: str,
+        subject: str,
     ) -> None:
-        # Renderizar el template
+
         env = Environment(loader=FileSystemLoader("hub/email/templates"))
         template = env.get_template(template_file_name + ".html")
         html_contenido = template.render(**variables)
 
-        # Crear email
-        mensaje = MIMEMultipart("alternative")
-        mensaje["Subject"] = subjet
-        mensaje["From"] = self.remitente
-        mensaje["To"] = email_destinatario
+        # Crear y enviar el email con Django
+        mensaje = EmailMultiAlternatives(
+            subject=subject,
+            body=html_contenido,  # fallback text, puede ir vacío si solo querés HTML
+            from_email=self.remitente,
+            to=[email_destinatario],
+        )
+        mensaje.attach_alternative(html_contenido, "text/html")
+        mensaje.send()
 
-        parte_html = MIMEText(html_contenido, "html")
-        mensaje.attach(parte_html)
+    def enviar_email_recuperarcion_contrasenia(self, user: User, token: str) -> None:
+        # Renderizar el template
+        url_token_form = STATIC_FRONTEND_URL + "/updatePassword?token=" + token
 
-        # Enviar el email
-        with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-            server.starttls()
-            server.login(self.remitente, self.contrasenia)
-            server.send_message(mensaje)
+        self.enviar_email_con_template(
+            "email_Reset_password",
+            user.email,
+            {"nombre": user.name, "url": url_token_form},
+            "Recuperar contraseña",
+        )

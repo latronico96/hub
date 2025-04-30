@@ -3,7 +3,11 @@
 
 help:
 	@echo "Comandos disponibles:"
+	@echo "  run                - Levanta el servidor local (localhost:8000), worker () y Redis (localhost:6379)"
 	@echo "  runserver          - Levanta el servidor local (localhost:8000)"
+	@echo "  runworker          - Levanta el worker de Celery"
+	@echo "  startresdis        - Levanta Redis (localhost:6379)"
+	@echo "  stopredis          - Detiene y elimina Redis (localhost:6379)"
 	@echo "  migrate            - Aplica migraciones"
 	@echo "  makemigrations     - Crea nuevas migraciones"
 	@echo "  shell              - Abre el shell de Django"
@@ -25,8 +29,35 @@ install:
 	pip install -r requirements.txt
 	pip install pytest pytest-cov black isort flake8 mypy pylint django-extensions
 
+run:
+	@echo "Iniciando Celery worker..."
+	python -m celery -A hub worker --loglevel=info &
+
+	@echo "Iniciando Django..."
+	python manage.py runserver &
+
+	wait
+
 runserver:
 	python manage.py runserver
+
+startresdis:
+	@echo "stop redis if running..."
+	docker stop redis || true
+	@echo "remove redis if exists..."
+	docker rm redis || true
+	@echo "Iniciando Redis..."
+	docker run -d -p 6379:6379 redis:7.0
+
+stopredis:
+	@echo "Deteniendo Redis..."
+	docker stop redis || true
+	@echo "Eliminando Redis..."
+	docker rm redis || true
+
+runworker:
+	@echo "Iniciando Celery worker..."
+	python -m celery -A hub worker --loglevel=info
 
 migrate:
 	python manage.py migrate

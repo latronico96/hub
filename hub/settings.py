@@ -35,6 +35,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+STATIC_FRONTEND_URL = "http://localhost:3000"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -77,9 +78,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "hub.urls"
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-]
+CORS_ALLOWED_ORIGINS = [STATIC_FRONTEND_URL]
 
 CORS_ALLOW_HEADERS = [
     "content-type",
@@ -218,3 +217,16 @@ else:
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = "devs@recetascocol.com.ar"
     EMAIL_HOST_PASSWORD = "RmYfz3q8irAx3"
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",  # base de datos 1
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"

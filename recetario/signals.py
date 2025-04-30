@@ -1,6 +1,5 @@
 from typing import Any, Type
 
-from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -21,14 +20,6 @@ def create_basic_units(
         Unidad.crear_unidades_por_defecto_para_usuario(instance)
 
 
-def send_email_welcome(instance: User) -> None:
-    if settings.EMAIL_BACKEND == "django.core.mail.backends.locmem.EmailBackend":
-        print("Skipping email sending in test environment")  # Debugging log
-        return
-    email_sender: EmailSender = EmailSender()
-    email_sender.enviar_email_de_bienvenida(instance)
-
-
 @receiver(post_save, sender=User)
 def handle_user_creation(
     sender: Type[User],  # pylint: disable=unused-argument
@@ -37,4 +28,5 @@ def handle_user_creation(
     **kwargs: Any,
 ) -> None:
     if created:
-        send_email_welcome(instance)
+        email_sender: EmailSender = EmailSender()
+        email_sender.enviar_email_de_bienvenida(instance)
