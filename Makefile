@@ -38,7 +38,7 @@ shell:
 	python manage.py shell
 
 test:
-	coverage run -m pytest
+	pytest --cov=hub --cov=recetario --cov=tests --cov=users --cov-report=term-missing  # Use pytest-cov for coverage
 	coverage report -m
 
 lint:
@@ -58,7 +58,7 @@ format:
 	black . --exclude 'env|migrations'
 
 coverage:
-	coverage html
+	pytest --cov=hub --cov=recetario --cov=tests --cov=users --cov-report=html  # Generate HTML report
 	@echo "Abrí htmlcov/index.html en tu navegador para ver el reporte."
 
 check: lint test coverage
