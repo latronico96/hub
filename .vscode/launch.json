@@ -3,14 +3,15 @@
     "configurations": [
         {
             "name": "Python: Run Tests",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/manage.py",
-            "args": ["test"],
+            "args": ["test", "--ds=hub.settings"],
             "console": "integratedTerminal",
             "env": {
                 "ENVIRONMENT": "test",
-                "DJANGO_SETTINGS_MODULE": "hub.settings"  // o hub.settings.test si querés
+                "RUNNING_TESTS": "1",
+                "DJANGO_SETTINGS_MODULE": "hub.settings"
             }
         }
     ]

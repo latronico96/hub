@@ -7,7 +7,8 @@
             "command": "python",
             "args": [
                 "manage.py",
-                "test"
+                "test",
+                "--ds=hub.settings"
             ],
             "group": {
                 "kind": "test",
@@ -19,6 +20,7 @@
             },
             "options": {
                 "env": {
+                    "RUNNING_TESTS": "1",
                     "ENVIRONMENT": "test",
                     "DJANGO_SETTINGS_MODULE": "hub.settings"
                 }

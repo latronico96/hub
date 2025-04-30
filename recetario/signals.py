@@ -1,9 +1,8 @@
 from typing import Any, Type
-import os
 
+from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.conf import settings
 
 from hub.email.email_sender import EmailSender
 from users.models import User

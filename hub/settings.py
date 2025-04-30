@@ -15,16 +15,15 @@ import sys
 from pathlib import Path
 
 # Evaluate if the application is running in a test environment
-is_testing:bool = (
-    "test" in sys.argv or 
-    "pytest" in sys.argv or 
-    os.getenv("RUNNING_TESTS") == 1 or
-    os.getenv("RUNNING_TESTS") == "1" or
-    os.getenv("DJANGO_SETTINGS_MODULE") == "hub.settings.test" or
-    os.getenv("DJANGO_SETTINGS_MODULE") == "user.settings.test" or
-    os.getenv("DJANGO_SETTINGS_MODULE") == "recetario.settings.test" or
-    os.environ.get("PYTEST_CURRENT_TEST") is not None or
-    os.getenv("ENVIRONMENT") == "test"
+is_testing: bool = (
+    "test" in sys.argv
+    or "pytest" in sys.argv
+    or os.getenv("RUNNING_TESTS") == "1"  # Ensure comparison is always with a string
+    or os.getenv("DJANGO_SETTINGS_MODULE") == "hub.settings.test"
+    or os.getenv("DJANGO_SETTINGS_MODULE") == "user.settings.test"
+    or os.getenv("DJANGO_SETTINGS_MODULE") == "recetario.settings.test"
+    or os.environ.get("PYTEST_CURRENT_TEST") is not None
+    or os.getenv("ENVIRONMENT") == "test"
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -218,4 +217,4 @@ else:
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = "devs@recetascocol.com.ar"
-    EMAIL_HOST_PASSWORD = "RmYfz3q8irAx"
+    EMAIL_HOST_PASSWORD = "RmYfz3q8irAx3"

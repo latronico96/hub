@@ -3,16 +3,30 @@
     "python.testing.pytestEnabled": true,
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestArgs": ["--cov=.", "--cov-report=html", "recetario/test"],
+    "python.testing.pytestArgs": [
+        "--ds=hub.settings",
+        "--cov=.",
+        "--cov-report=html",
+        "tests",
+        "users/tests",
+        "recetario/tests",
+        "hub/tests"
+    ],    
     "python.linting.pylintEnabled": true,
     "python.linting.pylintArgs": ["--rcfile=.pylintrc"],
     "terminal.integrated.env.windows": {
-        "ENVIRONMENT": "test"
+        "ENVIRONMENT": "test",
+        "RUNNING_TESTS": "1",
+        "DJANGO_SETTINGS_MODULE": "hub.settings"
     },
     "terminal.integrated.env.linux": {
-        "ENVIRONMENT": "test"
+        "ENVIRONMENT": "test",
+        "RUNNING_TESTS": "1",
+        "DJANGO_SETTINGS_MODULE": "hub.settings"
     },
     "terminal.integrated.env.osx": {
-        "ENVIRONMENT": "test"
+        "ENVIRONMENT": "test",
+        "RUNNING_TESTS": "1",
+        "DJANGO_SETTINGS_MODULE": "hub.settings"
     }
 }
