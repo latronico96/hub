@@ -11,7 +11,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from hub.email.email_sender import EmailSender
+from hub.tasks import enviar_email_recuperarcion_contrasenia_task
 
 from .authentication import JWTAuthentication
 from .models import User
@@ -144,8 +144,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
                 "iat": int(now.timestamp()),
             }
             token = jwt.encode(payload, "secret", algorithm="HS256")
-            email_sender: EmailSender = EmailSender()
-            email_sender.enviar_email_recuperarcion_contrasenia(user, token)
+            enviar_email_recuperarcion_contrasenia_task.delay(user.id, token)
         except User.DoesNotExist as e:
             logger.error("Ocurrió un error: %s", str(e), exc_info=True)
             return Response(

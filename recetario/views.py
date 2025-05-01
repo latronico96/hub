@@ -1,11 +1,15 @@
 from django.db.models import QuerySet
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
+from rest_framework.views import APIView
 
 from users.service import UserService
 
 from .models import Producto, Receta, Unidad
 from .serializers import ProductoSerializer, RecetaSerializer, UnidadSerializer
+from .user_totals_cache import AllUserTotalsCache
 
 
 # pylint: disable=too-many-ancestors
@@ -57,3 +61,12 @@ class RecetaViewSet(viewsets.ModelViewSet[Receta]):
 
     def perform_create(self, serializer: BaseSerializer[Receta]) -> None:
         serializer.save(user=self.request.user)
+
+
+class DashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_id = request.user.id
+        totals = AllUserTotalsCache().get(user_id)
+        return Response(totals)

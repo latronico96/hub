@@ -3,7 +3,7 @@ from typing import Any, Type
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from hub.email.email_sender import EmailSender
+from hub.tasks import enviar_email_de_bienvenida_task
 from users.models import User
 
 from .models import Unidad
@@ -28,5 +28,4 @@ def handle_user_creation(
     **kwargs: Any,
 ) -> None:
     if created:
-        email_sender: EmailSender = EmailSender()
-        email_sender.enviar_email_de_bienvenida(instance)
+        enviar_email_de_bienvenida_task.delay(instance.id)
