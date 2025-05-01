@@ -1,6 +1,7 @@
 from django.db.models import QuerySet
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
@@ -66,7 +67,7 @@ class RecetaViewSet(viewsets.ModelViewSet[Receta]):
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request: Request) -> Response:
         user_id = request.user.id
         totals = AllUserTotalsCache().get(user_id)
         return Response(totals)

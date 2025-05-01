@@ -7,7 +7,7 @@ from .models import Producto, Receta, Unidad
 
 
 @shared_task
-def precargar_totales_usuarios():
+def precargar_totales_usuarios() -> None:
     for user in User.objects.all():
         cache.set(
             f"user_totals_{user.id}",
