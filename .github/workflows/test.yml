@@ -54,6 +54,10 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-django pytest-cov coverage black flake8 isort pylint mypy
 
+      - name: Run migrations
+        run: |
+          python manage.py migrate --noinput
+          python manage.py collectstatic --noinput
       - name: Run linters
         run: |
           echo "==================== ISORT ===================="
