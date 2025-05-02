@@ -1,10 +1,11 @@
-from typing import Dict, Generator, Set
-from unittest.mock import MagicMock, patch, call
+from typing import Dict, Generator
+from unittest.mock import MagicMock, call, patch
+
 import pytest
 from django.core.cache import cache as django_cache
 
-from recetario.user_totals_cache import UserTotalsCache, UserTotals
-from users.models import User
+from recetario.user_totals_cache import UserTotals, UserTotalsCache
+
 
 class TestUserTotalsCache:
     @pytest.fixture(autouse=True)
@@ -47,7 +48,9 @@ class TestUserTotalsCache:
     def test_get_for_nonexistent_user(self) -> None:
         """Test para usuario que no existe"""
         with patch.object(
-            self.cache, "_compute_user_totals", return_value={"unidades": 0, "productos": 0, "recetas": 0}
+            self.cache,
+            "_compute_user_totals",
+            return_value={"unidades": 0, "productos": 0, "recetas": 0},
         ):
             result = self.cache.get(999)  # ID que no existe
 
@@ -57,10 +60,9 @@ class TestUserTotalsCache:
         """Test que la invalidación limpia solo un usuario"""
         # Llenar la caché para dos usuarios
         with patch.object(
-            self.cache, "_compute_user_totals", side_effect=[
-                self.sample_data[1],
-                self.sample_data[2]
-            ]
+            self.cache,
+            "_compute_user_totals",
+            side_effect=[self.sample_data[1], self.sample_data[2]],
         ):
             self.cache.get(1)
             self.cache.get(2)
@@ -76,10 +78,9 @@ class TestUserTotalsCache:
         """Test que la invalidación limpia toda la caché"""
         # Llenar la caché
         with patch.object(
-            self.cache, "_compute_user_totals", side_effect=[
-                self.sample_data[1],
-                self.sample_data[2]
-            ]
+            self.cache,
+            "_compute_user_totals",
+            side_effect=[self.sample_data[1], self.sample_data[2]],
         ):
             self.cache.get(1)
             self.cache.get(2)
@@ -150,11 +151,11 @@ class TestUserTotalsCache:
         self.cache._remove_from_users_list(99)
         assert django_cache.get("all_users_with_totals") == {1, 3}
 
-    @patch.object(UserTotalsCache, 'get')
+    @patch.object(UserTotalsCache, "get")
     def test_warm_up_cache(self, mock_get: MagicMock) -> None:
         """Test que warm_up_cache precarga correctamente"""
         user_ids = [1, 2, 3]
-        
+
         # Test con lista específica
         self.cache.warm_up_cache(user_ids)
         mock_get.assert_has_calls([call(1), call(2), call(3)], any_order=True)
@@ -164,6 +165,10 @@ class TestUserTotalsCache:
 
         # Test sin parámetros (debería usar todos los usuarios)
         with patch("recetario.user_totals_cache.User.objects") as mock_objects:
-            mock_objects.values_list.return_value = [4, 5, 6]  # Configurar valores esperados
+            mock_objects.values_list.return_value = [
+                4,
+                5,
+                6,
+            ]  # Configurar valores esperados
             self.cache.warm_up_cache()
             mock_get.assert_has_calls([call(4), call(5), call(6)], any_order=True)

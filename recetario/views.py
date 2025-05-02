@@ -10,7 +10,7 @@ from users.service import UserService
 
 from .models import Producto, Receta, Unidad
 from .serializers import ProductoSerializer, RecetaSerializer, UnidadSerializer
-from .user_totals_cache import AllUserTotalsCache
+from .user_totals_cache import UserTotalsCache
 
 
 # pylint: disable=too-many-ancestors
@@ -69,5 +69,5 @@ class DashboardView(APIView):
 
     def get(self, request: Request) -> Response:
         user_id = request.user.id
-        totals = AllUserTotalsCache().get(user_id)
+        totals = UserTotalsCache().get(user_id)
         return Response(totals)
