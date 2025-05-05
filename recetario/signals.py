@@ -7,6 +7,7 @@ from hub.tasks import enviar_email_de_bienvenida_task
 from users.models import User
 
 from .models import Unidad
+from .permission_manager import PermissionManager
 
 
 @receiver(post_save, sender=User)
@@ -28,4 +29,7 @@ def handle_user_creation(
     **kwargs: Any,
 ) -> None:
     if created:
+        PermissionManager.assign_permissions_to_user(
+            instance, PermissionManager.USER_ROLE
+        )
         enviar_email_de_bienvenida_task.delay(instance.id)

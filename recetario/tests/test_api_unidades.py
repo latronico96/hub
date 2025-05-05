@@ -3,7 +3,7 @@ import pytest
 from users.utils.user_test_helpers import setup_registre_user_generate_token
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db()
 def test_api_unidades() -> None:
     client, token, _ = setup_registre_user_generate_token()
 
@@ -16,8 +16,9 @@ def test_api_unidades() -> None:
         format="json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )
+    assert responseUnidad1.status_code == 201
 
-    client.post(
+    responseUnidad2 = client.post(
         "/recetario/unidades/",
         {
             "nombre": "Kilogramos",
@@ -26,6 +27,7 @@ def test_api_unidades() -> None:
         format="json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )
+    assert responseUnidad2.status_code == 201
 
     responseUnidad3 = client.post(
         "/recetario/unidades/",
@@ -36,6 +38,7 @@ def test_api_unidades() -> None:
         format="json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )
+    assert responseUnidad3.status_code == 201
 
     response = client.get("/recetario/unidades/", HTTP_AUTHORIZATION=f"Bearer {token}")
 
@@ -45,10 +48,11 @@ def test_api_unidades() -> None:
     unidad1_id = responseUnidad1.data["id"]
     unidad3_id = responseUnidad3.data["id"]
 
-    client.delete(
+    responseDelete = client.delete(
         "/recetario/unidades/" + str(unidad3_id) + "/",
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )
+    assert responseDelete.status_code == 204
 
     response = client.get("/recetario/unidades/", HTTP_AUTHORIZATION=f"Bearer {token}")
 

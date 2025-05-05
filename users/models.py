@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    Permission,
+    PermissionsMixin,
+)
 from django.db import models
 
 
@@ -25,12 +30,13 @@ class UserManager(BaseUserManager["User"]):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser):
+class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=50)
     email = models.EmailField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+    user_permissions = models.ManyToManyField(Permission, blank=True)
 
     objects: UserManager = UserManager()
 
@@ -40,12 +46,12 @@ class User(AbstractBaseUser):
     def __str__(self) -> str:
         return f"{self.name}"
 
-    def has_perm(self, _: str, __: Any = None) -> bool:
-        return True
-
-    def has_module_perms(self, _: str) -> bool:
-        return True
-
     @property
     def is_staff(self) -> bool:
         return self.is_admin
+
+    class Meta:
+        verbose_name = "User"
+        verbose_name_plural = "Users"
+        ordering = ["-created_at"]
+        permissions = []

@@ -16,6 +16,12 @@ class Unidad(models.Model):
     nombre = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="unidades")
 
+    class Meta:
+        verbose_name = "Unidad"
+        verbose_name_plural = "Unidades"
+        ordering = ["abreviacion"]
+        permissions = []
+
     def __str__(self) -> str:
         return str(self.nombre)
 
@@ -49,6 +55,12 @@ class Producto(models.Model):
     def __str__(self) -> str:
         return str(self.nombre)
 
+    class Meta:
+        verbose_name = "Producto"
+        verbose_name_plural = "Productos"
+        ordering = ["nombre"]
+        permissions = []
+
 
 class Receta(models.Model):
     id = models.AutoField(primary_key=True)
@@ -58,6 +70,12 @@ class Receta(models.Model):
 
     def __str__(self) -> str:
         return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Receta"
+        verbose_name_plural = "Recetas"
+        ordering = ["nombre"]
+        permissions = []
 
 
 class Ingrediente(models.Model):
@@ -78,3 +96,8 @@ class Ingrediente(models.Model):
 
     def __str__(self) -> str:
         return f"{self.cantidad} {self.unidad.abreviacion} de {self.producto.nombre}"
+
+    class Meta:
+        verbose_name = "Ingrediente"
+        verbose_name_plural = "Ingredientes"
+        permissions = []

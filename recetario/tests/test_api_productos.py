@@ -4,7 +4,7 @@ from recetario.utils.test_helpers import setup_create_gramo, setup_create_kilogr
 from users.utils.user_test_helpers import setup_registre_user_generate_token
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db()
 def tests_api_productos() -> None:
     client, token, user = setup_registre_user_generate_token()
     # Create Unidades

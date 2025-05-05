@@ -1,12 +1,13 @@
 from typing import Any
 
-from rest_framework import serializers
+from django.contrib.auth.models import Permission
+from rest_framework.serializers import ModelSerializer
 
 from .models import User
 
 
 # pylint: disable=too-few-public-methods
-class UserSerializer(serializers.ModelSerializer[User]):
+class UserSerializer(ModelSerializer[User]):
     class Meta:
         model = User
         fields = [
@@ -16,9 +17,16 @@ class UserSerializer(serializers.ModelSerializer[User]):
             "created_at",
             "is_active",
             "is_admin",
+            "user_permissions",
         ]
 
     def to_representation(self, instance: User) -> dict[str, Any]:
         representation = super().to_representation(instance)
         representation.pop("password", None)
         return representation
+
+
+class PermissionSerializer(ModelSerializer):
+    class Meta:
+        model = Permission
+        fields = ["id", "name", "codename"]

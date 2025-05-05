@@ -3,19 +3,26 @@ import logging
 
 import jwt
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import (
+    AllowAny,
+    DjangoModelPermissions,
+    IsAdminUser,
+    IsAuthenticated,
+)
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from hub.tasks import enviar_email_recuperarcion_contrasenia_task
 
 from .authentication import JWTAuthentication
 from .models import User
-from .serializers import UserSerializer
+from .serializers import PermissionSerializer, UserSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +31,7 @@ logger = logging.getLogger(__name__)
 class UserViewSet(viewsets.ModelViewSet[User]):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAdminUser & DjangoModelPermissions]
 
     @action(
         detail=False, methods=["post"], url_path="login", permission_classes=[AllowAny]
@@ -101,6 +109,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         detail=False,
         methods=["get"],
         url_path="me",
+        permission_classes=[IsAuthenticated],
     )
     def me(self, request: Request) -> Response:
         """
@@ -202,3 +211,9 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         user.save()
 
         return Response({"detail": "Password updated successfully."})
+
+
+class PermissionViewSet(ReadOnlyModelViewSet):
+    queryset = Permission.objects.all()
+    serializer_class = PermissionSerializer
+    permission_classes = [IsAuthenticated]
