@@ -1,6 +1,7 @@
+from typing import Type
 from django.db.models import QuerySet
 from rest_framework import viewsets
-from rest_framework.permissions import DjangoModelPermissions, IsAuthenticated
+from rest_framework.permissions import BasePermission, DjangoModelPermissions, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
@@ -18,7 +19,7 @@ class UnidadViewSet(viewsets.ModelViewSet[Unidad]):
     queryset = Unidad.objects.all()
     serializer_class = UnidadSerializer
     user_service = UserService()
-    permission_classes: list = [DjangoModelPermissions]
+    permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
 
     def get_queryset(self) -> QuerySet[Unidad]:
         if self.user_service.is_admin_and_authenticated(self.request):
@@ -36,7 +37,7 @@ class ProductoViewSet(viewsets.ModelViewSet[Producto]):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
     user_service = UserService()
-    permission_classes: list = [DjangoModelPermissions]
+    permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
 
     def get_queryset(self) -> QuerySet[Producto]:
         if self.user_service.is_admin_and_authenticated(self.request):
@@ -54,7 +55,7 @@ class RecetaViewSet(viewsets.ModelViewSet[Receta]):
     queryset = Receta.objects.all()
     serializer_class = RecetaSerializer
     user_service = UserService()
-    permission_classes: list = [DjangoModelPermissions]
+    permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
 
     def get_queryset(self) -> QuerySet[Receta]:
         if self.user_service.is_admin_and_authenticated(self.request):

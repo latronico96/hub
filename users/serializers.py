@@ -26,7 +26,7 @@ class UserSerializer(ModelSerializer[User]):
         return representation
 
 
-class PermissionSerializer(ModelSerializer):
+class PermissionSerializer(ModelSerializer[Permission]):
     class Meta:
         model = Permission
         fields = ["id", "name", "codename"]

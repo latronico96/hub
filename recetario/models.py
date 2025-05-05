@@ -1,5 +1,6 @@
 from typing import List, TypedDict
 
+from django.contrib.auth.models import Permission
 from django.db import models
 
 from users.models import User
@@ -20,7 +21,7 @@ class Unidad(models.Model):
         verbose_name = "Unidad"
         verbose_name_plural = "Unidades"
         ordering = ["abreviacion"]
-        permissions = []
+        permissions: list[Permission] = []
 
     def __str__(self) -> str:
         return str(self.nombre)
@@ -59,7 +60,7 @@ class Producto(models.Model):
         verbose_name = "Producto"
         verbose_name_plural = "Productos"
         ordering = ["nombre"]
-        permissions = []
+        permissions: list[Permission] = []
 
 
 class Receta(models.Model):
@@ -75,7 +76,7 @@ class Receta(models.Model):
         verbose_name = "Receta"
         verbose_name_plural = "Recetas"
         ordering = ["nombre"]
-        permissions = []
+        permissions: list[Permission] = []
 
 
 class Ingrediente(models.Model):
@@ -100,4 +101,3 @@ class Ingrediente(models.Model):
     class Meta:
         verbose_name = "Ingrediente"
         verbose_name_plural = "Ingredientes"
-        permissions = []

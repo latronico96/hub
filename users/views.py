@@ -213,7 +213,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         return Response({"detail": "Password updated successfully."})
 
 
-class PermissionViewSet(ReadOnlyModelViewSet):
+class PermissionViewSet(ReadOnlyModelViewSet[Permission]):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
     permission_classes = [IsAuthenticated]
