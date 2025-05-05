@@ -1,7 +1,12 @@
 from typing import Type
+
 from django.db.models import QuerySet
 from rest_framework import viewsets
-from rest_framework.permissions import BasePermission, DjangoModelPermissions, IsAuthenticated
+from rest_framework.permissions import (
+    BasePermission,
+    DjangoModelPermissions,
+    IsAuthenticated,
+)
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
