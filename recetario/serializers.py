@@ -6,28 +6,46 @@ from .models import Ingrediente, Producto, Receta, Unidad
 
 
 class UnidadSerializer(serializers.ModelSerializer[Unidad]):
+    can_be_deleted = serializers.SerializerMethodField()
+
     class Meta:
         model = Unidad
-        fields = ["id", "nombre", "abreviacion"]
+        fields = ["id", "nombre", "abreviacion", "can_be_deleted"]
         read_only_fields = ["id"]
+
+    def get_can_be_deleted(self, obj: Unidad) -> bool:
+        return obj.can_be_deleted
 
 
 class ProductoSerializer(serializers.ModelSerializer[Producto]):
-    unidad = serializers.PrimaryKeyRelatedField(queryset=Unidad.objects.all())
+    unidadId = serializers.PrimaryKeyRelatedField(
+        queryset=Unidad.objects.all(),
+        source="unidad",
+    )
+    can_be_deleted = serializers.SerializerMethodField()
 
     class Meta:
         model = Producto
-        fields = ["id", "nombre", "cantidad", "unidad"]
+        fields = ["id", "nombre", "cantidad", "unidadId", "precio", "can_be_deleted"]
         read_only_fields = ["id"]
+
+    def get_can_be_deleted(self, obj: Producto) -> bool:
+        return obj.can_be_deleted
 
 
 class IngredienteSerializer(serializers.ModelSerializer[Ingrediente]):
-    producto = serializers.PrimaryKeyRelatedField(queryset=Producto.objects.all())
-    unidad = serializers.PrimaryKeyRelatedField(queryset=Unidad.objects.all())
+    productoId = serializers.PrimaryKeyRelatedField(
+        queryset=Producto.objects.all(),
+        source="producto",
+    )
+    unidadId = serializers.PrimaryKeyRelatedField(
+        queryset=Unidad.objects.all(),
+        source="unidad",
+    )
 
     class Meta:
         model = Ingrediente
-        fields = ["id", "producto", "cantidad", "unidad"]
+        fields = ["id", "productoId", "cantidad", "unidadId"]
         read_only_fields = ["id"]
 
 
@@ -36,7 +54,7 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
 
     class Meta:
         model = Receta
-        fields = ["id", "nombre", "descripcion", "ingredientes"]
+        fields = ["id", "nombre", "observaciones", "ingredientes", "rinde"]
         read_only_fields = ["id"]
 
     def create(self, validated_data: Dict[str, Any]) -> Receta:
@@ -56,7 +74,9 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
         ingredientes_data = validated_data.pop("ingredientes", [])
 
         instance.nombre = validated_data.get("nombre", instance.nombre)
-        instance.descripcion = validated_data.get("descripcion", instance.descripcion)
+        instance.observaciones = validated_data.get(
+            "observaciones", instance.observaciones
+        )
         instance.save()
 
         ingredientes_ids_nuevos = [
@@ -92,3 +112,20 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
                 )
 
         return instance
+
+
+class RecetaGrillaSerializer(serializers.ModelSerializer[Receta]):
+    ingredientes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Producto
+        fields = ["id", "nombre", "ingredientes"]
+
+    def get_ingredientes(self, obj: Receta) -> str:
+        ingredientes = obj.ingredientes.all()
+        ingredientes_str = [
+            f"{ingrediente.producto.nombre}"
+            + f" ({ingrediente.cantidad} {ingrediente.unidad.abreviacion})"
+            for ingrediente in ingredientes
+        ]
+        return ", ".join(ingredientes_str)

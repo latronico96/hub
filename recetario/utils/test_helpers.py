@@ -31,6 +31,7 @@ def setup_create_manzana(user: User, unidad: Unidad) -> Producto:
         nombre="Manzana",
         cantidad=1000,
         unidad=unidad,
+        precio=1000.0,
         user=user,
     )
 
@@ -40,5 +41,6 @@ def setup_create_harina(user: User, unidad: Unidad) -> Producto:
         nombre="Harina",
         cantidad=1,
         unidad=unidad,
+        precio=1600.0,
         user=user,
     )

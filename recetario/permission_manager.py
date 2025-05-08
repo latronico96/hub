@@ -43,6 +43,7 @@ class PermissionManager:
             "view_receta",
         ],
     }
+    _permissions_permission = "view_permission"
 
     @classmethod
     def assign_permissions_to_user(cls, user: User, user_type_permissions: str) -> None:
@@ -50,7 +51,11 @@ class PermissionManager:
         try:
             # Limpiar permisos existentes del usuario primero
             user.user_permissions.clear()
-
+            user.user_permissions.add(
+                Permission.objects.get(
+                    content_type__app_label="auth", codename=cls._permissions_permission
+                )
+            )
             for permission in cls._ROLES_PERMISSIONS[user_type_permissions]:
                 # Obtener el permiso considerando el content_type
                 app_label = "recetario"

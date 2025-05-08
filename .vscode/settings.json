@@ -15,19 +15,10 @@
     ],    
     "python.linting.pylintEnabled": true,
     "python.linting.pylintArgs": ["--rcfile=.pylintrc"],
-    "terminal.integrated.env.windows": {
-        "ENVIRONMENT": "test",
-        "RUNNING_TESTS": "1",
-        "DJANGO_SETTINGS_MODULE": "hub.settings"
-    },
-    "terminal.integrated.env.linux": {
-        "ENVIRONMENT": "test",
-        "RUNNING_TESTS": "1",
-        "DJANGO_SETTINGS_MODULE": "hub.settings"
-    },
-    "terminal.integrated.env.osx": {
-        "ENVIRONMENT": "test",
-        "RUNNING_TESTS": "1",
-        "DJANGO_SETTINGS_MODULE": "hub.settings"
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": false,
+        "scminput": false
     }
 }

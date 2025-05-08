@@ -17,7 +17,8 @@ def tests_api_productos() -> None:
         {
             "nombre": "Azúcar",
             "cantidad": 500,
-            "unidad": unidad1.id,
+            "unidadId": unidad1.id,
+            "precio": 1.5,
         },
         format="json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -27,7 +28,8 @@ def tests_api_productos() -> None:
         {
             "nombre": "Harina",
             "cantidad": 1000,
-            "unidad": unidad2.id,
+            "unidadId": unidad2.id,
+            "precio": 2.0,
         },
         format="json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -50,6 +52,8 @@ def tests_api_productos() -> None:
         {
             "nombre": "Azúcar Refinada",
             "cantidad": 750,
+            "unidadId": unidad1.id,
+            "precio": 1.8,
         },
         format="json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -61,6 +65,8 @@ def tests_api_productos() -> None:
     assert responseProducto1.status_code == 200
     assert responseProducto1.data["nombre"] == "Azúcar Refinada"
     assert responseProducto1.data["cantidad"] == 750
+    assert responseProducto1.data["unidadId"] == unidad1.id
+    assert responseProducto1.data["precio"] == 1.8
 
     # Delete Producto
     producto2_id = responseProducto2.data["id"]

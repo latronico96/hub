@@ -1,7 +1,8 @@
 from typing import Any
 
 from django.contrib.auth.models import Permission
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, SerializerMethodField
+
 
 from .models import User
 
@@ -15,9 +16,11 @@ class UserSerializer(ModelSerializer[User]):
             "name",
             "email",
             "created_at",
+            "updated_at",
             "is_active",
             "is_admin",
             "user_permissions",
+            "can_be_deleted",
         ]
 
     def to_representation(self, instance: User) -> dict[str, Any]:

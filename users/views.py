@@ -10,7 +10,6 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import (
     AllowAny,
-    DjangoModelPermissions,
     IsAdminUser,
     IsAuthenticated,
 )
@@ -31,7 +30,29 @@ logger = logging.getLogger(__name__)
 class UserViewSet(viewsets.ModelViewSet[User]):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAdminUser & DjangoModelPermissions]
+    permission_classes = [IsAdminUser]
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        force = request.query_params.get("force", "false").lower() == "true"
+
+        if user.can_be_deleted:
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        if force:
+            user.delete_cascade()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(
+            {
+                "detail": (
+                    "Este usuario tiene unidades, productos, recetas o ingredientes asociados. "
+                    "Usá el parámetro `?force=true` para forzar el borrado en cascada."
+                )
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     @action(
         detail=False, methods=["post"], url_path="login", permission_classes=[AllowAny]
@@ -55,6 +76,8 @@ class UserViewSet(viewsets.ModelViewSet[User]):
             "id": user.id,
             "exp": datetime.datetime.now() + datetime.timedelta(hours=24),
             "iat": datetime.datetime.now(),
+            "roles": [perm.codename for perm in user.user_permissions.all()],
+            "is_admin": user.is_admin,
         }
         token = jwt.encode(payload, "secret", algorithm="HS256")
 
@@ -100,6 +123,8 @@ class UserViewSet(viewsets.ModelViewSet[User]):
             "id": user_logged.id,
             "exp": datetime.datetime.now() + datetime.timedelta(hours=24),
             "iat": datetime.datetime.now(),
+            "roles": [perm.codename for perm in user_logged.user_permissions.all()],
+            "is_admin": user_logged.is_admin,
         }
         token = jwt.encode(payload, "secret", algorithm="HS256")
 
@@ -135,15 +160,15 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         """
         Endpoint to handle password reset requests.
         """
-        email = request.data.get("email")
-        if not email:
+        user_id : int = request.data.get("userId")
+        if not user_id:
             return Response(
-                {"detail": "Email is required."},
+                {"detail": "user_id is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            user = User.objects.get(email=email)
+            user: User = User.objects.get(id=user_id)
             now = datetime.datetime.now()
             exp = now + datetime.timedelta(minutes=20)
 
@@ -155,7 +180,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
             token = jwt.encode(payload, "secret", algorithm="HS256")
             enviar_email_recuperarcion_contrasenia_task.delay(user.id, token)
         except User.DoesNotExist as e:
-            logger.error("Ocurrió un error: %s", str(e), exc_info=True)
+            print("Ocurrió un error: %s", str(e), exc_info=True)
             return Response(
                 {"detail": "User with this email does not exist."},
                 status=status.HTTP_404_NOT_FOUND,

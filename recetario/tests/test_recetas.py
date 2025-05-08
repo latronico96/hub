@@ -11,11 +11,11 @@ def test_recetas() -> None:
     # Create Unidad and Producto
     unidad = Unidad.objects.create(nombre="Gramos", abreviacion="g", user=user)
     producto = Producto.objects.create(
-        nombre="Azúcar", cantidad=500, unidad=unidad, user=user
+        nombre="Azúcar", cantidad=500, unidad=unidad, precio=150.50, user=user
     )
 
     # Create Receta with Ingredientes
-    receta = Receta.objects.create(nombre="Torta", user=user)
+    receta = Receta.objects.create(nombre="Torta", rinde=1, observaciones="", user=user)
     ingrediente = Ingrediente.objects.create(
         cantidad=200, unidad=unidad, producto=producto, receta=receta, user=user
     )
@@ -38,18 +38,18 @@ def test_recetas_with_ingredientes() -> None:
     _, _, user = setup_registre_user_generate_token()
 
     unidad = Unidad.objects.create(nombre="Gramos", abreviacion="g", user=user)
-    receta = Receta.objects.create(nombre="Torta", user=user)
+    receta = Receta.objects.create(nombre="Torta", rinde=2, observaciones="", user=user)
 
     ingredientes_data = [
         {
             "producto": Producto.objects.create(
-                nombre="Azúcar", cantidad=500, unidad=unidad, user=user
+                nombre="Azúcar", cantidad=500, unidad=unidad, precio=123, user=user
             ),
             "cantidad": 200,
         },
         {
             "producto": Producto.objects.create(
-                nombre="Harina", cantidad=1000, unidad=unidad, user=user
+                nombre="Harina", cantidad=1000, unidad=unidad, precio=1230.50, user=user
             ),
             "cantidad": 300,
         },

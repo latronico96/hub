@@ -18,19 +18,20 @@ def tests_api_Recetas() -> None:
         "/recetario/recetas/",
         {
             "nombre": "Tarta de Manzana",
-            "descripcion": "Deliciosa tarta de manzana",
+            "observaciones": "Deliciosa tarta de manzana",
             "ingredientes": [
                 {
-                    "producto": productoManzana.id,
+                    "productoId": productoManzana.id,
                     "cantidad": 3,
-                    "unidad": productoManzana.unidad.id,
+                    "unidadId": productoManzana.unidad.id,
                 },
                 {
-                    "producto": productoHarina.id,
+                    "productoId": productoHarina.id,
                     "cantidad": 500,
-                    "unidad": productoHarina.unidad.id,
+                    "unidadId": productoHarina.unidad.id,
                 },
             ],
+            "rinde": 8,
         },
         format="json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -51,16 +52,17 @@ def tests_api_Recetas() -> None:
         {
             "id": receta1_id,
             "nombre": "Tarta de Manzana Actualizada",
-            "descripcion": "Tarta de manzana con un toque especial",
+            "observaciones": "Tarta de manzana con un toque especial",
             "ingredientes": [
                 {
                     "id": responseReceta1.data["ingredientes"][0]["id"],
                     "receta": receta1_id,
-                    "producto": productoManzana.id,
+                    "productoId": productoManzana.id,
                     "cantidad": 4,
-                    "unidad": productoManzana.unidad.id,
+                    "unidadId": productoManzana.unidad.id,
                 }
             ],
+            "rinde": 10,
         },
         format="json",
         HTTP_AUTHORIZATION=f"Bearer {token}",

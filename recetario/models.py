@@ -43,6 +43,13 @@ class Unidad(models.Model):
                 nombre=unidad["nombre"],
             )
 
+    @property
+    def can_be_deleted(self) -> bool:
+        return (
+            not Producto.objects.filter(unidad=self).exists()
+            or Ingrediente.objects.filter(unidad=self).exists()
+        )
+
 
 class Producto(models.Model):
     id = models.AutoField(primary_key=True)
@@ -51,6 +58,7 @@ class Producto(models.Model):
     unidad = models.ForeignKey(
         Unidad, on_delete=models.PROTECT, related_name="productos"
     )
+    precio = models.FloatField()
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="productos")
 
     def __str__(self) -> str:
@@ -62,11 +70,16 @@ class Producto(models.Model):
         ordering = ["nombre"]
         permissions: list[Permission] = []
 
+    @property
+    def can_be_deleted(self) -> bool:
+        return not Ingrediente.objects.filter(producto=self).exists()
+
 
 class Receta(models.Model):
     id = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
-    descripcion = models.TextField(blank=True, null=True)
+    observaciones = models.TextField(blank=True, null=True)
+    rinde = models.FloatField()
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="recetas")
 
     def __str__(self) -> str:

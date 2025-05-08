@@ -11,8 +11,8 @@ def test_productos() -> None:
     unidad = Unidad.objects.create(nombre="Gramos", abreviacion="g", user=user)
 
     data = [
-        {"nombre": "Azúcar", "cantidad": 500},
-        {"nombre": "Harina", "cantidad": 1000},
+        {"nombre": "Azúcar", "cantidad": 500, "precio": 1.5},
+        {"nombre": "Harina", "cantidad": 1000, "precio": 0.8},
     ]
 
     for d in data:
@@ -28,3 +28,5 @@ def test_productos() -> None:
         assert producto.unidad == unidad
         assert producto.user == user
         assert str(producto) == expected["nombre"]
+        assert producto.precio == expected["precio"]
+        assert producto.unidad.nombre == "Gramos"

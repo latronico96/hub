@@ -33,7 +33,7 @@ def setup_registre_user_generate_token() -> tuple[APIClient, str, User]:
     assert responseUserMe.data["email"] == "test@email.com", "User email does not match"
     assert responseUserMe.data["name"] == "user name", "User name does not match"
     assert (
-        len(responseUserMe.data["user_permissions"]) == 12
+        len(responseUserMe.data["user_permissions"]) == 13
     ), "User should have permissions to create, update, delete and view"
 
     return client, token, user

@@ -9,6 +9,7 @@ help:
 	@echo "  run               - Levanta servidor, worker y Redis"
 	@echo "  runserver         - Levanta solo el servidor Django"
 	@echo "  runworker         - Levanta solo el worker de Celery"
+	@echo "  runflower         - Levanta solo el mangement de flower"
 	@echo "  startredis        - Inicia contenedor Redis"
 	@echo "  stopredis         - Detiene y elimina contenedor Redis"
 	@echo "  migrate           - Aplica migraciones"
@@ -26,6 +27,9 @@ help:
 	@echo "  cleandb           - Limpia datos pero mantiene estructura"
 	@echo "  typecheck         - Verificación estática de tipos"
 	@echo "  createsuperuser   - Crea usuario administrador"
+	@echo "  envtest"
+	@echo "  envprod"
+	@echo "  envdebug"
 
 install:
 	pip install -r requirements.txt
@@ -51,8 +55,11 @@ stopredis:
 	-docker rm redis
 
 runworker:
-	python -m celery -A hub worker --loglevel=info
+	python -m celery -A hub worker --loglevel=info --pool=solo
 
+runflower:
+	python -m celery -A hub --broker=redis://localhost:6379/0 flower --port=5555
+	
 migrate:
 	python manage.py migrate
 
@@ -110,3 +117,15 @@ createsuperuser:
 	@python manage.py createsuperuser --email test@admin.com --username admin || \
 	(python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser(email='test@admin.com', username='admin', password='admin')" && \
 	echo "Superusuario creado: email=test@admin.com, password=admin")
+
+envtest:
+	@echo "Seteando entorno de TEST..."
+	@ENVIRONMENT=test RUNNING_TESTS=1 DJANGO_SETTINGS_MODULE=hub.settings  powershell
+
+envprod:
+	@echo "Seteando entorno de PRODUCCIÓN..."
+	@ENVIRONMENT=production DJANGO_SETTINGS_MODULE=hub.settings powershell
+
+envdebug:
+	@echo "Seteando entorno de DESARROLLO (debug)..."
+	@ENVIRONMENT=development DJANGO_SETTINGS_MODULE=hub.settings powershell

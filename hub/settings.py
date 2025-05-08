@@ -26,6 +26,7 @@ is_testing: bool = (
     or os.getenv("ENVIRONMENT") == "test"
 )
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -35,7 +36,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-STATIC_FRONTEND_URL = "http://localhost:3000"
+STATIC_FRONTEND_URL: str = "http://localhost:3000"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -178,24 +179,32 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_USER_MODEL = "users.User"
 
-if not DEBUG:
-    LOGGING = {
-        "version": 1,
-        "handlers": {
-            "file": {
-                "level": "DEBUG",
-                "class": "logging.FileHandler",
-                "filename": str(BASE_DIR) + "/logs/debug.log",
-            },
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'mail_file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/email_errors.log',
         },
-        "loggers": {
-            "django": {
-                "handlers": ["file"],
-                "level": "DEBUG",
-                "propagate": True,
-            },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
         },
-    }
+    },
+    'loggers': {
+        'django.core.mail': {
+            'handlers': ['mail_file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'hub.tasks': {  # Ajusta esto al módulo donde tienes tus tareas Celery
+            'handlers': ['mail_file', 'console'],
+            'level': 'DEBUG',
+        },
+    },
+}
 
 EMAIL_BACKEND: str
 EMAIL_HOST: str
@@ -215,8 +224,8 @@ else:
     EMAIL_HOST = "smtp.zoho.com"
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = "devs@recetascocol.com.ar"
-    EMAIL_HOST_PASSWORD = "RmYfz3q8irAx3"
+    EMAIL_HOST_USER = "info@recetascocol.com.ar"
+    EMAIL_HOST_PASSWORD = "7iM1BUBkkW06"
 
 CACHES = {
     "default": {
@@ -229,7 +238,7 @@ CACHES = {
 }
 
 CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
-CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/2"
 
 CELERY_BEAT_SCHEDULE = {
     "precargar_totales_diarios": {
@@ -241,3 +250,5 @@ CELERY_BEAT_SCHEDULE = {
 if is_testing:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
+
+print(f"[SETTINGS] ENV is_testing: {is_testing}")
