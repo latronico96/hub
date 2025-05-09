@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.apps import apps
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -55,25 +56,30 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def can_be_deleted(self) -> bool:
-        # Importación diferida para evitar dependencias circulares
-        from recetario.models import Ingrediente, Producto, Receta, Unidad
+        unidad_model = apps.get_model("recetario", "Unidad")
+        producto_model = apps.get_model("recetario", "Producto")
+        receta_model = apps.get_model("recetario", "Receta")
+        ingrediente_model = apps.get_model("recetario", "Ingrediente")
 
-        tiene_unidades = Unidad.objects.filter(user=self).exists()
-        tiene_productos = Producto.objects.filter(user=self).exists()
-        tiene_recetas = Receta.objects.filter(user=self).exists()
-        tiene_ingredientes = Ingrediente.objects.filter(user=self).exists()
+        tiene_unidades = unidad_model.objects.filter(user=self).exists()
+        tiene_productos = producto_model.objects.filter(user=self).exists()
+        tiene_recetas = receta_model.objects.filter(user=self).exists()
+        tiene_ingredientes = ingrediente_model.objects.filter(user=self).exists()
 
         return not any(
             [tiene_unidades, tiene_productos, tiene_recetas, tiene_ingredientes]
         )
 
     def delete_cascade(self) -> None:
-        from recetario.models import Ingrediente, Producto, Receta, Unidad
+        unidad_model = apps.get_model("recetario", "Unidad")
+        producto_model = apps.get_model("recetario", "Producto")
+        receta_model = apps.get_model("recetario", "Receta")
+        ingrediente_model = apps.get_model("recetario", "Ingrediente")
 
-        Ingrediente.objects.filter(user=self).delete()
-        Producto.objects.filter(user=self).delete()
-        Unidad.objects.filter(user=self).delete()
-        Receta.objects.filter(user=self).delete()
+        ingrediente_model.objects.filter(user=self).delete()
+        producto_model.objects.filter(user=self).delete()
+        unidad_model.objects.filter(user=self).delete()
+        receta_model.objects.filter(user=self).delete()
 
         self.delete()
 
