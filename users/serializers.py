@@ -1,8 +1,7 @@
 from typing import Any
 
 from django.contrib.auth.models import Permission
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
-
+from rest_framework.serializers import ModelSerializer
 
 from .models import User
 

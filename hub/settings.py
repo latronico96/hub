@@ -180,28 +180,28 @@ AUTHENTICATION_BACKENDS = [
 AUTH_USER_MODEL = "users.User"
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'mail_file': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': 'logs/email_errors.log',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "mail_file": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": "logs/email_errors.log",
         },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
         },
     },
-    'loggers': {
-        'django.core.mail': {
-            'handlers': ['mail_file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
+    "loggers": {
+        "django.core.mail": {
+            "handlers": ["mail_file", "console"],
+            "level": "DEBUG",
+            "propagate": True,
         },
-        'hub.tasks': {  # Ajusta esto al módulo donde tienes tus tareas Celery
-            'handlers': ['mail_file', 'console'],
-            'level': 'DEBUG',
+        "hub.tasks": {  # Ajusta esto al módulo donde tienes tus tareas Celery
+            "handlers": ["mail_file", "console"],
+            "level": "DEBUG",
         },
     },
 }

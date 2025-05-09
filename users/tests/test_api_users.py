@@ -103,7 +103,7 @@ class UserModelTest(TestCase):
 
         responseGenerateEmail = client.post(
             "/users/forgot-password/",
-            {"email": "test@email.com"},
+            {"userId": 1},
             format="json",
         )
         assert (

@@ -56,17 +56,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def can_be_deleted(self) -> bool:
         # Importación diferida para evitar dependencias circulares
-        from recetario.models import Unidad, Producto, Receta, Ingrediente
+        from recetario.models import Ingrediente, Producto, Receta, Unidad
 
         tiene_unidades = Unidad.objects.filter(user=self).exists()
         tiene_productos = Producto.objects.filter(user=self).exists()
         tiene_recetas = Receta.objects.filter(user=self).exists()
         tiene_ingredientes = Ingrediente.objects.filter(user=self).exists()
 
-        return not any([tiene_unidades, tiene_productos, tiene_recetas, tiene_ingredientes])
+        return not any(
+            [tiene_unidades, tiene_productos, tiene_recetas, tiene_ingredientes]
+        )
 
-    def delete_cascade(self):
-        from recetario.models import Unidad, Producto, Receta, Ingrediente
+    def delete_cascade(self) -> None:
+        from recetario.models import Ingrediente, Producto, Receta, Unidad
 
         Ingrediente.objects.filter(user=self).delete()
         Producto.objects.filter(user=self).delete()
@@ -74,6 +76,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         Receta.objects.filter(user=self).delete()
 
         self.delete()
+
     class Meta:
         verbose_name = "User"
         verbose_name_plural = "Users"

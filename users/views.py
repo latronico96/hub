@@ -1,5 +1,6 @@
 import datetime
 import logging
+from typing import Any
 
 import jwt
 from django.contrib.auth import authenticate
@@ -32,7 +33,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         user = self.get_object()
         force = request.query_params.get("force", "false").lower() == "true"
 
@@ -47,7 +48,8 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         return Response(
             {
                 "detail": (
-                    "Este usuario tiene unidades, productos, recetas o ingredientes asociados. "
+                    "Este usuario tiene:"
+                    "unidades, productos, recetas o ingredientes asociados."
                     "Usá el parámetro `?force=true` para forzar el borrado en cascada."
                 )
             },
@@ -160,12 +162,13 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         """
         Endpoint to handle password reset requests.
         """
-        user_id : int = request.data.get("userId")
-        if not user_id:
+        user_id_raw: Any | None = request.data.get("userId")
+        if not user_id_raw:
             return Response(
-                {"detail": "user_id is required."},
+                {"detail": "userId is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        user_id: int = int(user_id_raw)
 
         try:
             user: User = User.objects.get(id=user_id)
@@ -180,7 +183,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
             token = jwt.encode(payload, "secret", algorithm="HS256")
             enviar_email_recuperarcion_contrasenia_task.delay(user.id, token)
         except User.DoesNotExist as e:
-            print("Ocurrió un error: %s", str(e), exc_info=True)
+            logger.error("Ocurrió un error: %s", str(e), exc_info=True)
             return Response(
                 {"detail": "User with this email does not exist."},
                 status=status.HTTP_404_NOT_FOUND,

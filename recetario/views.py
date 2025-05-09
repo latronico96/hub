@@ -100,5 +100,7 @@ class DashboardView(APIView):
 
     def get(self, request: Request) -> Response:
         user_id = request.user.id
-        totals = UserTotalsCache().get(user_id)
+        if user_id is None:
+            raise ValueError("Authenticated user must have an ID")
+        totals = UserTotalsCache().get(int(user_id))
         return Response(totals)
