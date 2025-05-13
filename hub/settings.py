@@ -39,6 +39,9 @@ STATICFILES_DIRS = [
 STATIC_FRONTEND_URL: str = (
     os.getenv("DJANGO_STATIC_FRONTEND_URL") or "http://localhost:3000"
 )
+REDIS_SERVER: str = (
+    os.getenv("DJANGO_REDIS_SERVER") or "redis://127.0.0.1:6379/"
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -243,15 +246,15 @@ else:
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": REDIS_SERVER + "1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
     }
 }
 
-CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
-CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/2"
+CELERY_BROKER_URL = REDIS_SERVER + "0"
+CELERY_RESULT_BACKEND = REDIS_SERVER + "2"
 
 CELERY_BEAT_SCHEDULE = {
     "precargar_totales_diarios": {
