@@ -39,9 +39,7 @@ STATICFILES_DIRS = [
 STATIC_FRONTEND_URL: str = (
     os.getenv("DJANGO_STATIC_FRONTEND_URL") or "http://localhost:3000"
 )
-REDIS_SERVER: str = (
-    os.getenv("DJANGO_REDIS_SERVER") or "redis://127.0.0.1:6379/"
-)
+REDIS_SERVER: str = os.getenv("DJANGO_REDIS_SERVER") or "redis://127.0.0.1:6379/"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
