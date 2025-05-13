@@ -36,7 +36,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-STATIC_FRONTEND_URL: str = os.getenv("DJANGO_STATIC_FRONTEND_URL") or "http://localhost:3000"
+STATIC_FRONTEND_URL: str = (
+    os.getenv("DJANGO_STATIC_FRONTEND_URL") or "http://localhost:3000"
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -122,7 +124,6 @@ DATABASES = {
         "NAME": DATABASES_PATH,
     }
 }
-
 
 
 # Password validation
