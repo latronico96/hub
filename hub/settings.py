@@ -36,7 +36,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-STATIC_FRONTEND_URL: str = "http://localhost:3000"
+STATIC_FRONTEND_URL: str = os.getenv("DJANGO_STATIC_FRONTEND_URL") or "http://localhost:3000"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -110,6 +110,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "hub.wsgi.application"
+DATABASES_PATH: str = os.getenv("DJANGO_DATABASES_PATH") or BASE_DIR / "db.sqlite3"
 
 
 # Database
@@ -118,9 +119,10 @@ WSGI_APPLICATION = "hub.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": DATABASES_PATH,
     }
 }
+
 
 
 # Password validation
@@ -202,6 +204,16 @@ LOGGING = {
         "hub.tasks": {  # Ajusta esto al módulo donde tienes tus tareas Celery
             "handlers": ["mail_file", "console"],
             "level": "DEBUG",
+        },
+        "django.db.backends": {  # Agrega este logger para depurar consultas SQL
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "django": {  # Agrega este logger para capturar más detalles generales
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": True,
         },
     },
 }
