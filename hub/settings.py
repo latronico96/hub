@@ -112,7 +112,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "hub.wsgi.application"
-DATABASES_PATH: str = os.getenv("DJANGO_DATABASES_PATH") or BASE_DIR / "db.sqlite3"
+DATABASES_PATH: str = os.getenv("DJANGO_DATABASES_PATH") or str(BASE_DIR / "db.sqlite3")
 
 
 # Database
