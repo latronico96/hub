@@ -47,7 +47,7 @@ class Unidad(models.Model):
     def can_be_deleted(self) -> bool:
         return (
             not Producto.objects.filter(unidad=self).exists()
-            or Ingrediente.objects.filter(unidad=self).exists()
+            or not Ingrediente.objects.filter(unidad=self).exists()
         )
 
 
