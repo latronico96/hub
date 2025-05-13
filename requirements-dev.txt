@@ -19,7 +19,6 @@ pytest-cov==6.1.1
 pytest-django==4.11.1
 pytest-env==1.1.5
 coverage==7.8.0
-django-extensions==4.1
 iniconfig==2.1.0
 pathspec==0.12.1
 platformdirs==4.3.7
@@ -27,4 +26,3 @@ pluggy==1.5.0
 pycodestyle==2.13.0
 pyflakes==3.3.2
 tomlkit==0.13.2
-wcwidth==0.2.13

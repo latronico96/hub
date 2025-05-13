@@ -1,6 +1,6 @@
 .PHONY: help run runserver runworker startredis stopredis migrate makemigrations shell \
         test lint format coverage check install links updatedependences resetdb cleandb \
-        typecheck createsuperuser
+        typecheck createsuperuser uninstall-dev
 
 .DEFAULT_GOAL := help
 
@@ -30,6 +30,7 @@ help:
 	@echo "  envtest"
 	@echo "  envprod"
 	@echo "  envdebug"
+	@echo "  uninstall-dev     - Desinstala paquetes de desarrollo"
 
 install:
 	pip install -r requirements.txt
@@ -129,3 +130,9 @@ envprod:
 envdebug:
 	@echo "Seteando entorno de DESARROLLO (debug)..."
 	@ENVIRONMENT=development DJANGO_SETTINGS_MODULE=hub.settings powershell
+
+uninstall-dev:
+	pip uninstall -y black flake8 isort mypy mypy-extensions django-stubs django-stubs-ext \
+	djangorestframework-stubs pylint pylint-django pylint-plugin-utils types-PyYAML \
+	types-requests pytest pytest-cov pytest-django pytest-env coverage django-extensions \
+	iniconfig pathspec platformdirs pluggy pycodestyle pyflakes tomlkit wcwidth
