@@ -188,33 +188,33 @@ LOGGING = {
     "disable_existing_loggers": False,
     "handlers": {
         "mail_file": {
-            "level": "ERROR",
+            "level": "WARNING",
             "class": "logging.FileHandler",
             "filename": "logs/email_errors.log",
         },
         "console": {
-            "level": "DEBUG",
+            "level": "WARNING",
             "class": "logging.StreamHandler",
         },
     },
     "loggers": {
         "django.core.mail": {
             "handlers": ["mail_file", "console"],
-            "level": "DEBUG",
+            "level": "WARNING",
             "propagate": True,
         },
         "hub.tasks": {  # Ajusta esto al módulo donde tienes tus tareas Celery
             "handlers": ["mail_file", "console"],
-            "level": "DEBUG",
+            "level": "WARNING",
         },
         "django.db.backends": {  # Agrega este logger para depurar consultas SQL
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": "WARNING",
             "propagate": False,
         },
         "django": {  # Agrega este logger para capturar más detalles generales
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": "WARNING",
             "propagate": True,
         },
     },
