@@ -53,6 +53,9 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
+    os.getenv("DJANGO_STATIC_FRONTEND_URL", "").replace("http://", "").replace("https://", ""),
+    "recetascocol.com.ar",  # Agrega esta URL sin esquema
+    "www.recetascocol.com.ar",  # Agrega esta URL sin esquema
 ]
 
 # Application definition
