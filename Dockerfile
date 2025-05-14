@@ -19,6 +19,7 @@ WORKDIR /app
 # Instalar dependencias de Python
 COPY requirements.txt .
 RUN pip install --upgrade pip \
+    && pip install gunicorn \
     && pip install -r requirements.txt
 
 # Copiar todo el código
