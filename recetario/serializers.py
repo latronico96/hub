@@ -74,6 +74,7 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
         ingredientes_data = validated_data.pop("ingredientes", [])
 
         instance.nombre = validated_data.get("nombre", instance.nombre)
+        instance.rinde = validated_data.get("rinde", instance.rinde)
         instance.observaciones = validated_data.get(
             "observaciones", instance.observaciones
         )
