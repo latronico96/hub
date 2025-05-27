@@ -40,8 +40,8 @@ jobs:
       DB_NAME: testdb
       DB_USER: user
       DB_PASSWORD: password
-      DB_HOST: localhost
-      REDIS_HOST: localhost
+      DB_HOST: postgres
+      REDIS_HOST: redis
       REDIS_PORT: 6379
       PYTHONPATH: ${{ github.workspace }}
       DJANGO_SETTINGS_MODULE: hub.settings
