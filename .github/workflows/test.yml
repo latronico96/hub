@@ -37,10 +37,11 @@ jobs:
           --health-retries 5
 
     env:
-      DB_NAME: testdb
+      POSTGRES_DB: testdb
       POSTGRES_USER: user
-      DB_PASSWORD: password
+      POSTGRES_PASSWORD: password
       DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
       REDIS_HOST: redis
       REDIS_PORT: 6379
       PYTHONPATH: ${{ github.workspace }}
