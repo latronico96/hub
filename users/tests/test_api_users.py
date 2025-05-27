@@ -101,9 +101,14 @@ class UserModelTest(TestCase):
             responseRegister.data["token"] is not None
         ), "Token not returned in login response"
 
+        # Obtener el id del usuario recién creado
+        from users.models import User
+
+        user = User.objects.get(email="test@email.com")
+
         responseGenerateEmail = client.post(
             "/users/forgot-password/",
-            {"userId": 1},
+            {"userId": user.id},
             format="json",
         )
         assert (
