@@ -62,12 +62,21 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      - name: Wait for PostgreSQL and Redis
+      - name: Wait for PostgreSQL with pg_isready
         run: |
-          echo "Esperando a PostgreSQL y Redis..."
+          echo "Esperando a PostgreSQL con pg_isready..."
           for i in {1..30}; do
-            nc -z postgres 5432 && nc -z redis 6379 && echo "Postgres y Redis listos" && break
-            echo "Esperando servicios..."
+            pg_isready -h postgres -p 5432 -U user && echo "PostgreSQL listo" && break
+            echo "Esperando pg_isready..."
+            sleep 2
+          done
+
+      - name: Wait for Redis
+        run: |
+          echo "Esperando a Redis..."
+          for i in {1..30}; do
+            nc -z redis 6379 && echo "Redis listo" && break
+            echo "Esperando Redis..."
             sleep 2
           done
 
@@ -98,24 +107,6 @@ jobs:
         run: |
           pytest --cov=hub --cov=recetario --cov=tests --cov=users --cov-report=term-missing --cov-fail-under=80
           coverage xml
-
-      - name: Wait for PostgreSQL with pg_isready
-        run: |
-          echo "Esperando a PostgreSQL con pg_isready..."
-          for i in {1..30}; do
-            pg_isready -h postgres -p 5432 -U user && echo "PostgreSQL listo" && break
-            echo "Esperando pg_isready..."
-            sleep 2
-          done
-
-      - name: Wait for Redis
-        run: |
-          echo "Esperando a Redis..."
-          for i in {1..30}; do
-            nc -z redis 6379 && echo "Redis listo" && break
-            echo "Esperando Redis..."
-            sleep 2
-          done
 
   docker:
     needs: test
