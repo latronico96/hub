@@ -68,6 +68,11 @@ jobs:
             echo "Waiting for PostgreSQL..."
             sleep 1
           done
+      - name: Debug- Check DNS and connectivity
+        run: |
+          getent hosts postgres
+          ping -c 3 postgres || true
+          nc -vz postgres 5432 || true
       - name: Run migrations
         run: |
           python manage.py migrate --noinput
