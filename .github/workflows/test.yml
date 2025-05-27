@@ -40,9 +40,9 @@ jobs:
       POSTGRES_DB: testdb
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      DATABASE_HOST: postgres
+      DATABASE_HOST: localhost  # Cambiado aquí
       DATABASE_PORT: 5432
-      REDIS_HOST: redis
+      REDIS_HOST: localhost     # Cambiado aquí
       REDIS_PORT: 6379
       PYTHONPATH: ${{ github.workspace }}
       DJANGO_SETTINGS_MODULE: hub.settings
@@ -66,7 +66,7 @@ jobs:
         run: |
           echo "Esperando a PostgreSQL con pg_isready..."
           for i in {1..30}; do
-            pg_isready -h postgres -p 5432 -U user && echo "PostgreSQL listo" && break
+            pg_isready -h localhost -p 5432 -U user && echo "PostgreSQL listo" && break
             echo "Esperando pg_isready..."
             sleep 2
           done
@@ -75,20 +75,16 @@ jobs:
         run: |
           echo "Esperando a Redis..."
           for i in {1..30}; do
-            nc -z redis 6379 && echo "Redis listo" && break
+            nc -z localhost 6379 && echo "Redis listo" && break
             echo "Esperando Redis..."
             sleep 2
           done
 
-      - name: Debug - Check DNS and connectivity
+      - name: Debug - Check connectivity
         run: |
-          echo "DNS y conexión:"
-          getent hosts postgres || true
-          getent hosts redis || true
-          ping -c 2 postgres || true
-          ping -c 2 redis || true
-          nc -vz postgres 5432 || true
-          nc -vz redis 6379 || true
+          echo "Verificando conectividad:"
+          nc -vz localhost 5432 || true
+          nc -vz localhost 6379 || true
 
       - name: Run migrations
         run: |
