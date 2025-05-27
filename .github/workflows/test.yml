@@ -60,7 +60,13 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..20}; do
+            nc -z postgres 5432 && echo "PostgreSQL is up!" && break
+            echo "Waiting for PostgreSQL..."
+            sleep 1
+          done
       - name: Run migrations
         run: |
           python manage.py migrate --noinput
