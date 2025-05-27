@@ -1,4 +1,4 @@
-name: Django CI & Docker
+name: Django CI
 
 on:
   push:
@@ -21,10 +21,10 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd="pg_isready -U user"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
       redis:
         image: redis:7
@@ -98,6 +98,24 @@ jobs:
         run: |
           pytest --cov=hub --cov=recetario --cov=tests --cov=users --cov-report=term-missing --cov-fail-under=80
           coverage xml
+
+      - name: Wait for PostgreSQL with pg_isready
+        run: |
+          echo "Esperando a PostgreSQL con pg_isready..."
+          for i in {1..30}; do
+            pg_isready -h postgres -p 5432 -U user && echo "PostgreSQL listo" && break
+            echo "Esperando pg_isready..."
+            sleep 2
+          done
+
+      - name: Wait for Redis
+        run: |
+          echo "Esperando a Redis..."
+          for i in {1..30}; do
+            nc -z redis 6379 && echo "Redis listo" && break
+            echo "Esperando Redis..."
+            sleep 2
+          done
 
   docker:
     needs: test
