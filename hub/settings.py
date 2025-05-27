@@ -125,10 +125,10 @@ DATABASES_PATH: str = os.getenv("DJANGO_DATABASES_PATH") or str(BASE_DIR / "db.s
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB"),
-        "USER": os.getenv("POSTGRES_USER"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
-        "HOST": os.getenv("DATABASE_HOST"),
+        "NAME": os.getenv("POSTGRES_DB", "hub"),
+        "USER": os.getenv("POSTGRES_USER", "postgres"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "RECETASCOCOL"),
+        "HOST": os.getenv("DATABASE_HOST", "localhost"),
         "PORT": os.getenv("DATABASE_PORT", "5432"),
     }
 }
@@ -256,6 +256,14 @@ CACHES = {
         },
     }
 }
+
+# Usar DummyCache en tests para deshabilitar el cache real
+if is_testing:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        }
+    }
 
 CELERY_BROKER_URL = REDIS_SERVER + "0"
 CELERY_RESULT_BACKEND = REDIS_SERVER + "2"

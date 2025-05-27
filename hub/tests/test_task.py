@@ -1,0 +1,204 @@
+import logging
+from unittest.mock import patch, MagicMock
+from smtplib import SMTPException
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import DatabaseError
+import pytest
+from celery.exceptions import Retry
+
+from users.models import User
+from hub.tasks import (
+    enviar_email_de_bienvenida_task,
+    enviar_email_recuperarcion_contrasenia_task,
+)
+
+@pytest.fixture
+def mock_user():
+    user = MagicMock(spec=User)
+    user.id = 1
+    user.email = "test@example.com"
+    return user
+
+@pytest.fixture
+def mock_email_sender():
+    with patch('hub.tasks.EmailSender') as mock:
+        instance = mock.return_value
+        yield instance
+
+class TestEnviarEmailDeBienvenidaTask:
+    def test_envio_exitoso(self, mock_user, mock_email_sender):
+        """Test que el email se envía correctamente"""
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            result = enviar_email_de_bienvenida_task(1)
+            
+            mock_email_sender.enviar_email_de_bienvenida.assert_called_once_with(mock_user)
+            assert result is None
+
+    def test_usuario_no_existe(self, mock_email_sender):
+        """Test cuando el usuario no existe"""
+        with patch('hub.tasks.User.objects.get', side_effect=ObjectDoesNotExist):
+            with pytest.raises(ObjectDoesNotExist):
+                enviar_email_de_bienvenida_task(999)
+                
+        mock_email_sender.enviar_email_de_bienvenida.assert_not_called()
+
+    def test_error_smtp_y_reintento(self, mock_user, mock_email_sender):
+        """Test para errores SMTP que deben reintentarse"""
+        mock_email_sender.enviar_email_de_bienvenida.side_effect = SMTPException("Error SMTP")
+        
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            task = enviar_email_de_bienvenida_task.s(1)
+            with pytest.raises(Retry):
+                task.apply()
+                
+        mock_email_sender.enviar_email_de_bienvenida.assert_called_once_with(mock_user)
+
+    def test_error_conexion_y_reintento(self, mock_user, mock_email_sender):
+        """Test para errores de conexión que deben reintentarse"""
+        mock_email_sender.enviar_email_de_bienvenida.side_effect = ConnectionError("Error conexión")
+        
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            task = enviar_email_de_bienvenida_task.s(1)
+            with pytest.raises(Retry):
+                task.apply()
+                
+        mock_email_sender.enviar_email_de_bienvenida.assert_called_once_with(mock_user)
+
+    def test_error_timeout_y_reintento(self, mock_user, mock_email_sender):
+        """Test para timeouts que deben reintentarse"""
+        mock_email_sender.enviar_email_de_bienvenida.side_effect = TimeoutError("Timeout")
+        
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            task = enviar_email_de_bienvenida_task.s(1)
+            with pytest.raises(Retry):
+                task.apply()
+                
+        mock_email_sender.enviar_email_de_bienvenida.assert_called_once_with(mock_user)
+
+    def test_error_inesperado(self, mock_user, mock_email_sender, caplog):
+        """Test para errores inesperados"""
+        mock_email_sender.enviar_email_de_bienvenida.side_effect = Exception("Error inesperado")
+        
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            with pytest.raises(Exception):
+                enviar_email_de_bienvenida_task(1)
+                
+        assert "Error inesperado" in caplog.text
+        mock_email_sender.enviar_email_de_bienvenida.assert_called_once_with(mock_user)
+
+    def test_logging_exitoso(self, mock_user, mock_email_sender, caplog):
+        """Test que verifica el logging en caso exitoso"""
+        import hub.tasks
+        hub.tasks.logger.setLevel(logging.INFO)  # <--- Asegura nivel INFO
+        caplog.clear()
+        with caplog.at_level(logging.INFO, logger="hub.tasks"):
+            with patch('hub.tasks.User.objects.get', return_value=mock_user):
+                enviar_email_de_bienvenida_task(1)
+        assert "Email de bienvenida enviado exitosamente" in caplog.text
+        assert str(mock_user.email) in caplog.text
+        assert str(mock_user.id) in caplog.text
+
+class TestEnviarEmailRecuperacionContraseniaTask:
+    def test_envio_exitoso(self, mock_user, mock_email_sender):
+        """Test que el email de recuperación se envía correctamente"""
+        test_token = "test_token123"
+        
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            result = enviar_email_recuperarcion_contrasenia_task(1, test_token)
+            
+            mock_email_sender.enviar_email_recuperarcion_contrasenia.assert_called_once_with(
+                mock_user, test_token
+            )
+            assert result is None
+
+    def test_usuario_no_existe(self, mock_email_sender):
+        """Test cuando el usuario no existe para recuperación"""
+        with patch('hub.tasks.User.objects.get', side_effect=ObjectDoesNotExist):
+            with pytest.raises(ObjectDoesNotExist):
+                enviar_email_recuperarcion_contrasenia_task(999, "token")
+                
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.assert_not_called()
+
+    def test_error_smtp_y_reintento(self, mock_user, mock_email_sender):
+        """Test para errores SMTP en recuperación que deben reintentarse"""
+        test_token = "test_token123"
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.side_effect = SMTPException("Error SMTP")
+        
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            task = enviar_email_recuperarcion_contrasenia_task.s(1, test_token)
+            with pytest.raises(Retry):
+                task.apply()
+                
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.assert_called_once_with(
+            mock_user, test_token
+        )
+
+    def test_error_conexion_y_reintento(self, mock_user, mock_email_sender):
+        """Test para errores de conexión en recuperación"""
+        test_token = "test_token123"
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.side_effect = ConnectionError("Error conexión")
+        
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            task = enviar_email_recuperarcion_contrasenia_task.s(1, test_token)
+            with pytest.raises(Retry):
+                task.apply()
+                
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.assert_called_once_with(
+            mock_user, test_token
+        )
+
+    def test_error_timeout_y_reintento(self, mock_user, mock_email_sender):
+        """Test para timeouts en recuperación"""
+        test_token = "test_token123"
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.side_effect = TimeoutError("Timeout")
+        
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            task = enviar_email_recuperarcion_contrasenia_task.s(1, test_token)
+            with pytest.raises(Retry):
+                task.apply()
+                
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.assert_called_once_with(
+            mock_user, test_token
+        )
+
+    def test_error_db_y_reintento(self, mock_user, mock_email_sender):
+        """Test para errores de base de datos en recuperación"""
+        test_token = "test_token123"
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.side_effect = DatabaseError("Error DB")
+        
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            task = enviar_email_recuperarcion_contrasenia_task.s(1, test_token)
+            with pytest.raises(Retry):
+                task.apply()
+                
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.assert_called_once_with(
+            mock_user, test_token
+        )
+
+    def test_error_inesperado_recuperacion(self, mock_user, mock_email_sender, caplog):
+        """Test para errores inesperados en recuperación"""
+        test_token = "test_token123"
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.side_effect = Exception("Error inesperado")
+        
+        with patch('hub.tasks.User.objects.get', return_value=mock_user):
+            with pytest.raises(Exception):
+                enviar_email_recuperarcion_contrasenia_task(1, test_token)
+                
+        assert "Error inesperado" in caplog.text
+        assert "token" in caplog.text  # Verificar que se registra el token (parcial)
+        mock_email_sender.enviar_email_recuperarcion_contrasenia.assert_called_once_with(
+            mock_user, test_token
+        )
+
+    def test_logging_exitoso_recuperacion(self, mock_user, mock_email_sender, caplog):
+        """Test que verifica el logging en caso exitoso de recuperación"""
+        import hub.tasks
+        hub.tasks.logger.setLevel(logging.INFO)  # <--- Asegura nivel INFO
+        test_token = "test_token123"
+        caplog.clear()
+        with caplog.at_level(logging.INFO, logger="hub.tasks"):
+            with patch('hub.tasks.User.objects.get', return_value=mock_user):
+                enviar_email_recuperarcion_contrasenia_task(1, test_token)
+        assert "Email de recuperación enviado" in caplog.text
+        assert str(mock_user.email) in caplog.text
+        assert str(mock_user.id) in caplog.text

@@ -26,7 +26,7 @@ kombu==5.5.3
 MarkupSafe==3.0.2
 packaging==24.2
 prometheus_client==0.21.1
-psycopg==3.2.9
+psycopg2-binary
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 pytz==2025.2

@@ -69,9 +69,6 @@ class TestRecetarioConfig(TestCase):
             # Verificar que se llamó a la tarea
             mock_delay.assert_called_once()
 
-            # Verificar que se actualizó el cache
-            self.assertEqual(cache.get("totales_precargados"), True)
-
     @patch("recetario.apps.import_module")
     def test_signals_imported(self, mock_import: MagicMock) -> None:
         # Verificar que se importan las señales

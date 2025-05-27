@@ -4,6 +4,16 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 from django.core.cache import cache as django_cache
 
+# Cambia el scope a function (o elimina el argumento scope)
+@pytest.fixture(autouse=True)
+def use_locmem_cache(settings):
+    settings.CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
+
 from recetario.user_totals_cache import UserTotals, UserTotalsCache
 
 
