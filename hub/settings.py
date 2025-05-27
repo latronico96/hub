@@ -132,10 +132,6 @@ DATABASES = {
         "PORT": os.getenv("DATABASE_PORT"),
     }
 }
-print("[DB CONFIG]")
-print("HOST:", os.environ.get("DB_HOST"))
-print("NAME:", os.environ.get("DB_NAME"))
-print("USER:", os.environ.get("DB_USER"))
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

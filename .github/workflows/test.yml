@@ -38,7 +38,7 @@ jobs:
 
     env:
       DB_NAME: testdb
-      DB_USER: user
+      POSTGRES_USER: user
       DB_PASSWORD: password
       DB_HOST: postgres
       REDIS_HOST: redis
