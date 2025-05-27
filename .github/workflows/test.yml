@@ -40,7 +40,7 @@ jobs:
       DB_NAME: testdb
       POSTGRES_USER: user
       DB_PASSWORD: password
-      DB_HOST: postgres
+      DATABASE_HOST: postgres
       REDIS_HOST: redis
       REDIS_PORT: 6379
       PYTHONPATH: ${{ github.workspace }}
