@@ -5,7 +5,7 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
-  workflow_dispatch: # Permite ejecutar el workflow manualmente desde GitHub
+  workflow_dispatch:
 
 jobs:
   test:
@@ -61,18 +61,26 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-      - name: Wait for PostgreSQL
+
+      - name: Wait for PostgreSQL and Redis
         run: |
+          echo "Esperando a PostgreSQL y Redis..."
           for i in {1..30}; do
-            getent hosts postgres && nc -z postgres 5432 && echo "PostgreSQL is up!" && break
-            echo "Waiting for PostgreSQL DNS and port..."
-            sleep 1
+            nc -z postgres 5432 && nc -z redis 6379 && echo "Postgres y Redis listos" && break
+            echo "Esperando servicios..."
+            sleep 2
           done
-      - name: Debug- Check DNS and connectivity
+
+      - name: Debug - Check DNS and connectivity
         run: |
-          getent hosts postgres
-          ping -c 3 postgres || true
+          echo "DNS y conexión:"
+          getent hosts postgres || true
+          getent hosts redis || true
+          ping -c 2 postgres || true
+          ping -c 2 redis || true
           nc -vz postgres 5432 || true
+          nc -vz redis 6379 || true
+
       - name: Run migrations
         run: |
           python manage.py migrate --noinput
