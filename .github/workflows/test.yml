@@ -63,9 +63,9 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Wait for PostgreSQL
         run: |
-          for i in {1..20}; do
-            nc -z postgres 5432 && echo "PostgreSQL is up!" && break
-            echo "Waiting for PostgreSQL..."
+          for i in {1..30}; do
+            getent hosts postgres && nc -z postgres 5432 && echo "PostgreSQL is up!" && break
+            echo "Waiting for PostgreSQL DNS and port..."
             sleep 1
           done
       - name: Debug- Check DNS and connectivity
