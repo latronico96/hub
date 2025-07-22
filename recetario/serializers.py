@@ -54,7 +54,9 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
 
     class Meta:
         model = Receta
-        fields = ["id", "nombre", "observaciones", "ingredientes", "rinde"]
+        fields = [
+            "id", "nombre", "observaciones", "ingredientes", "rinde", "precio_unidad", "precio"
+        ]
         read_only_fields = ["id"]
 
     def create(self, validated_data: Dict[str, Any]) -> Receta:

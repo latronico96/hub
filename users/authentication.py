@@ -9,9 +9,13 @@ from users.models import User
 class JWTAuthentication(BaseAuthentication):
     def authenticate(self, request: HttpRequest) -> tuple[User, None] | None:
         auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
+        token = None
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+        else:
+            token = request.COOKIES.get("jwt_token")
+        if not token:
             return None
-        token = auth_header.split(" ")[1]
         user = self.get_user(token)
         return (user, None)
 

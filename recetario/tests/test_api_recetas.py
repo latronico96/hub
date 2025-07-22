@@ -32,6 +32,8 @@ def tests_api_Recetas() -> None:
                 },
             ],
             "rinde": 8,
+            "precio_unidad": 150.0,
+            "precio": 1200.0,
         },
         format="json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -63,6 +65,8 @@ def tests_api_Recetas() -> None:
                 }
             ],
             "rinde": 10,
+            "precio_unidad": 160.0,
+            "precio": 1600.0,
         },
         format="json",
         HTTP_AUTHORIZATION=f"Bearer {token}",
