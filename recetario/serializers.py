@@ -80,6 +80,8 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
         instance.observaciones = validated_data.get(
             "observaciones", instance.observaciones
         )
+        instance.precio_unidad = validated_data.get("precio_unidad", instance.precio_unidad)
+        instance.precio = validated_data.get("precio", instance.precio)
         instance.save()
 
         ingredientes_ids_nuevos = [
