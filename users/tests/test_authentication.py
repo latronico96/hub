@@ -19,48 +19,56 @@ class TestJWTAuthentication(TestCase):
         )
         self.invalid_token = "invalid.token.value"
 
-    def make_request(self, headers=None, cookies=None) -> MagicMock:
+    def make_request(
+        self,
+        headers: dict[str, str] | None = None,
+        cookies: dict[str, str] | None = None
+    ) -> MagicMock:
         request = MagicMock()
         request.headers = headers or {}
         request.COOKIES = cookies or {}
         return request
 
-    def test_missing_authorization_header(self):
+    def test_missing_authorization_header(self) -> None:
         request = self.make_request()
         self.assertIsNone(self.auth.authenticate(request))
 
-    def test_invalid_token_format(self):
+    def test_invalid_token_format(self) -> None:
         request = self.make_request(headers={"Authorization": "InvalidHeader"})
         self.assertIsNone(self.auth.authenticate(request))
 
     @patch("users.models.User.objects.get")
-    def test_valid_authorization_header(self, mock_get: MagicMock):
+    def test_valid_authorization_header(self, mock_get: MagicMock) -> None:
         mock_user = MagicMock()
         mock_get.return_value = mock_user
         request = self.make_request(
             headers={"Authorization": f"Bearer {self.valid_token}"}
         )
         result = self.auth.authenticate(request)
-        self.assertEqual(result[0], mock_user)
+        self.assertIsNotNone(result)
+        if result is not None:
+            self.assertEqual(result[0], mock_user)
 
     @patch("users.models.User.objects.get")
-    def test_valid_cookie_token(self, mock_get: MagicMock):
+    def test_valid_cookie_token(self, mock_get: MagicMock) -> None:
         mock_user = MagicMock()
         mock_get.return_value = mock_user
         request = self.make_request(cookies={"jwt_token": self.valid_token})
         result = self.auth.authenticate(request)
-        self.assertEqual(result[0], mock_user)
+        self.assertIsNotNone(result)
+        if result is not None:
+            self.assertEqual(result[0], mock_user)
 
-    def test_invalid_token_in_cookie(self):
+    def test_invalid_token_in_cookie(self) -> None:
         request = self.make_request(cookies={"jwt_token": "not.a.valid.token"})
         with self.assertRaises(AuthenticationFailed):
             self.auth.authenticate(request)
 
-    def test_no_token_anywhere(self):
+    def test_no_token_anywhere(self) -> None:
         request = self.make_request()
         self.assertIsNone(self.auth.authenticate(request))
 
-    def test_expired_token(self):
+    def test_expired_token(self) -> None:
         request = self.make_request(
             headers={"Authorization": f"Bearer {self.expired_token}"}
         )
@@ -68,7 +76,7 @@ class TestJWTAuthentication(TestCase):
             self.auth.authenticate(request)
         self.assertEqual(str(context.exception), "Token expired")
 
-    def test_invalid_token(self):
+    def test_invalid_token(self) -> None:
         request = self.make_request(
             headers={"Authorization": f"Bearer {self.invalid_token}"}
         )
@@ -77,7 +85,7 @@ class TestJWTAuthentication(TestCase):
         self.assertEqual(str(context.exception), "Invalid token")
 
     @patch("users.models.User.objects.get")
-    def test_user_not_found(self, mock_get: MagicMock):
+    def test_user_not_found(self, mock_get: MagicMock) -> None:
         mock_get.side_effect = User.DoesNotExist
         request = self.make_request(
             headers={"Authorization": f"Bearer {self.valid_token}"}
