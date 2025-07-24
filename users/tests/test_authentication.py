@@ -8,12 +8,15 @@ from rest_framework.exceptions import AuthenticationFailed
 from users.authentication import JWTAuthentication
 from users.models import User
 
+
 @pytest.mark.django_db
 class TestJWTAuthentication(TestCase):
     def setUp(self) -> None:
         self.auth = JWTAuthentication()
         self.valid_token = jwt.encode({"id": 1}, "secret", algorithm="HS256")
-        self.expired_token = jwt.encode({"id": 1, "exp": 0}, "secret", algorithm="HS256")
+        self.expired_token = jwt.encode(
+            {"id": 1, "exp": 0}, "secret", algorithm="HS256"
+        )
         self.invalid_token = "invalid.token.value"
 
     def make_request(self, headers=None, cookies=None) -> MagicMock:
@@ -34,7 +37,9 @@ class TestJWTAuthentication(TestCase):
     def test_valid_authorization_header(self, mock_get: MagicMock):
         mock_user = MagicMock()
         mock_get.return_value = mock_user
-        request = self.make_request(headers={"Authorization": f"Bearer {self.valid_token}"})
+        request = self.make_request(
+            headers={"Authorization": f"Bearer {self.valid_token}"}
+        )
         result = self.auth.authenticate(request)
         self.assertEqual(result[0], mock_user)
 
@@ -56,13 +61,17 @@ class TestJWTAuthentication(TestCase):
         self.assertIsNone(self.auth.authenticate(request))
 
     def test_expired_token(self):
-        request = self.make_request(headers={"Authorization": f"Bearer {self.expired_token}"})
+        request = self.make_request(
+            headers={"Authorization": f"Bearer {self.expired_token}"}
+        )
         with self.assertRaises(AuthenticationFailed) as context:
             self.auth.authenticate(request)
         self.assertEqual(str(context.exception), "Token expired")
 
     def test_invalid_token(self):
-        request = self.make_request(headers={"Authorization": f"Bearer {self.invalid_token}"})
+        request = self.make_request(
+            headers={"Authorization": f"Bearer {self.invalid_token}"}
+        )
         with self.assertRaises(AuthenticationFailed) as context:
             self.auth.authenticate(request)
         self.assertEqual(str(context.exception), "Invalid token")
@@ -70,7 +79,9 @@ class TestJWTAuthentication(TestCase):
     @patch("users.models.User.objects.get")
     def test_user_not_found(self, mock_get: MagicMock):
         mock_get.side_effect = User.DoesNotExist
-        request = self.make_request(headers={"Authorization": f"Bearer {self.valid_token}"})
+        request = self.make_request(
+            headers={"Authorization": f"Bearer {self.valid_token}"}
+        )
         with self.assertRaises(AuthenticationFailed) as context:
             self.auth.authenticate(request)
         self.assertEqual(str(context.exception), "User not found")

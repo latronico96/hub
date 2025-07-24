@@ -82,7 +82,7 @@ class Receta(models.Model):
     rinde = models.FloatField()
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="recetas")
     precio_unidad = models.FloatField()
-    precio=models.FloatField();
+    precio = models.FloatField()
 
     def __str__(self) -> str:
         return str(self.nombre)

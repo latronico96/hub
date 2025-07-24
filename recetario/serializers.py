@@ -55,7 +55,13 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
     class Meta:
         model = Receta
         fields = [
-            "id", "nombre", "observaciones", "ingredientes", "rinde", "precio_unidad", "precio"
+            "id",
+            "nombre",
+            "observaciones",
+            "ingredientes",
+            "rinde",
+            "precio_unidad",
+            "precio",
         ]
         read_only_fields = ["id"]
 
@@ -80,7 +86,9 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
         instance.observaciones = validated_data.get(
             "observaciones", instance.observaciones
         )
-        instance.precio_unidad = validated_data.get("precio_unidad", instance.precio_unidad)
+        instance.precio_unidad = validated_data.get(
+            "precio_unidad", instance.precio_unidad
+        )
         instance.precio = validated_data.get("precio", instance.precio)
         instance.save()
 
