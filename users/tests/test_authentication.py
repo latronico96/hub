@@ -22,7 +22,7 @@ class TestJWTAuthentication(TestCase):
     def make_request(
         self,
         headers: dict[str, str] | None = None,
-        cookies: dict[str, str] | None = None
+        cookies: dict[str, str] | None = None,
     ) -> MagicMock:
         request = MagicMock()
         request.headers = headers or {}
