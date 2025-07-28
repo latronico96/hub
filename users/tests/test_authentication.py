@@ -23,10 +23,12 @@ class TestJWTAuthentication(TestCase):
         self,
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,
+        path: str="/some/protected/route",
     ) -> MagicMock:
         request = MagicMock()
         request.headers = headers or {}
         request.COOKIES = cookies or {}
+        request.path = path
         return request
 
     def test_missing_authorization_header(self) -> None:
@@ -53,14 +55,14 @@ class TestJWTAuthentication(TestCase):
     def test_valid_cookie_token(self, mock_get: MagicMock) -> None:
         mock_user = MagicMock()
         mock_get.return_value = mock_user
-        request = self.make_request(cookies={"jwt_token": self.valid_token})
+        request = self.make_request(cookies={"jwt_token": self.valid_token}, path="/some/protected/route")
         result = self.auth.authenticate(request)
         self.assertIsNotNone(result)
         if result is not None:
             self.assertEqual(result[0], mock_user)
 
     def test_invalid_token_in_cookie(self) -> None:
-        request = self.make_request(cookies={"jwt_token": "not.a.valid.token"})
+        request = self.make_request(cookies={"jwt_token": "not.a.valid.token"}, path="/some/protected/route")
         with self.assertRaises(AuthenticationFailed):
             self.auth.authenticate(request)
 

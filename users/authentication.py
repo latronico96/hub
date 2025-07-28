@@ -13,7 +13,8 @@ class JWTAuthentication(BaseAuthentication):
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
         else:
-            token = request.COOKIES.get("jwt_token")
+            if not request.path.startswith("/users/login"):
+                token = request.COOKIES.get("jwt_token")
         if not token:
             return None
         user = self.get_user(token)
