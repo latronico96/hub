@@ -1,4 +1,5 @@
 import logging
+import threading
 from importlib import import_module
 from typing import Any
 
@@ -24,7 +25,7 @@ class RecetarioConfig(AppConfig):
         self._register_post_migrate_handler()
 
         # Intentar precargar cache al iniciar (si las tablas existen)
-        self._try_precache_data()
+        threading.Thread(target=self._try_precache_data, daemon=True).start()
 
     def _register_post_migrate_handler(self) -> None:
         """Registra el handler para ejecutarse después de las migraciones."""
@@ -32,7 +33,7 @@ class RecetarioConfig(AppConfig):
         @receiver(post_migrate)
         def on_post_migrate(sender: AppConfig, **kwargs: Any) -> None:
             if sender.name in ["users", "recetario"]:
-                self._try_precache_data()
+                threading.Thread(target=self._try_precache_data, daemon=True).start()
 
     def _try_precache_data(self, max_retries: int = 3) -> None:
         """Intenta precargar los datos con mecanismo de reintento."""

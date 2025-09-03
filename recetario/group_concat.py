@@ -1,5 +1,6 @@
 from ast import Expression
 from typing import Any, Optional, Union
+
 from django.db.models import Aggregate, CharField, F
 from django.db.models.expressions import Combinable
 
