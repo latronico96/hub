@@ -10,40 +10,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: testdb
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U user"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
-      POSTGRES_DB: testdb
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      DATABASE_HOST: localhost  # Cambiado aquí
-      DATABASE_PORT: 5432
-      REDIS_HOST: localhost     # Cambiado aquí
-      REDIS_PORT: 6379
       PYTHONPATH: ${{ github.workspace }}
       DJANGO_SETTINGS_MODULE: hub.settings
       RUNNING_TESTS: "1"
@@ -62,29 +29,10 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      - name: Wait for PostgreSQL with pg_isready
-        run: |
-          echo "Esperando a PostgreSQL con pg_isready..."
-          for i in {1..30}; do
-            pg_isready -h localhost -p 5432 -U user && echo "PostgreSQL listo" && break
-            echo "Esperando pg_isready..."
-            sleep 2
-          done
-
-      - name: Wait for Redis
-        run: |
-          echo "Esperando a Redis..."
-          for i in {1..30}; do
-            nc -z localhost 6379 && echo "Redis listo" && break
-            echo "Esperando Redis..."
-            sleep 2
-          done
-
       - name: Debug - Check connectivity
         run: |
           echo "Verificando conectividad:"
           nc -vz localhost 5432 || true
-          nc -vz localhost 6379 || true
 
       - name: Run migrations
         run: |

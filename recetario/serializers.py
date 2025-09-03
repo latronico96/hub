@@ -14,7 +14,15 @@ class UnidadSerializer(serializers.ModelSerializer[Unidad]):
         read_only_fields = ["id"]
 
     def get_can_be_deleted(self, obj: Unidad) -> bool:
-        return obj.can_be_deleted
+        has_product = getattr(obj, "has_product", None)
+        has_ingrediente = getattr(obj, "has_ingrediente", None)
+
+        if has_product is None:
+            has_product = Producto.objects.filter(unidad=obj).exists()
+        if has_ingrediente is None:
+            has_ingrediente = Ingrediente.objects.filter(unidad=obj).exists()
+
+        return not (has_product or has_ingrediente)
 
 
 class ProductoSerializer(serializers.ModelSerializer[Producto]):
@@ -30,7 +38,10 @@ class ProductoSerializer(serializers.ModelSerializer[Producto]):
         read_only_fields = ["id"]
 
     def get_can_be_deleted(self, obj: Producto) -> bool:
-        return obj.can_be_deleted
+        has_ingrediente = getattr(obj, "has_ingrediente", None)
+        if has_ingrediente is None:
+            has_ingrediente = Ingrediente.objects.filter(producto=obj).exists()
+        return not has_ingrediente
 
 
 class IngredienteSerializer(serializers.ModelSerializer[Ingrediente]):
@@ -128,17 +139,8 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
 
 
 class RecetaGrillaSerializer(serializers.ModelSerializer[Receta]):
-    ingredientes = serializers.SerializerMethodField()
+    ingredientes = serializers.CharField(source="ingredientes_str", read_only=True)
 
     class Meta:
-        model = Producto
+        model = Receta
         fields = ["id", "nombre", "ingredientes"]
-
-    def get_ingredientes(self, obj: Receta) -> str:
-        ingredientes = obj.ingredientes.all()
-        ingredientes_str = [
-            f"{ingrediente.producto.nombre}"
-            + f" ({ingrediente.cantidad} {ingrediente.unidad.abreviacion})"
-            for ingrediente in ingredientes
-        ]
-        return ", ".join(ingredientes_str)

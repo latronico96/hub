@@ -1,4 +1,4 @@
-.PHONY: help run runserver runworker startredis stopredis migrate makemigrations shell \
+.PHONY: help run runserver migrate makemigrations shell \
         test lint format coverage check install links updatedependences resetdb cleandb \
         typecheck createsuperuser uninstall-dev
 
@@ -8,10 +8,6 @@ help:
 	@echo "Comandos disponibles:"
 	@echo "  run               - Levanta servidor, worker y Redis"
 	@echo "  runserver         - Levanta solo el servidor Django"
-	@echo "  runworker         - Levanta solo el worker de Celery"
-	@echo "  runflower         - Levanta solo el mangement de flower"
-	@echo "  startredis        - Inicia contenedor Redis"
-	@echo "  stopredis         - Detiene y elimina contenedor Redis"
 	@echo "  migrate           - Aplica migraciones"
 	@echo "  makemigrations    - Crea nuevas migraciones"
 	@echo "  shell             - Abre shell interactivo de Django"
@@ -36,30 +32,10 @@ install:
 	pip install -r requirements.txt
 	pip install pytest pytest-cov black isort flake8 mypy pylint django-extensions
 
-run: startredis runserver runworker
+run: runserver
 
 runserver:
 	python manage.py runserver
-
-startredis:
-	@echo "Deteniendo Redis si está corriendo..."
-	-docker stop redis
-	@echo "Eliminando contenedor si existe..."
-	-docker rm redis
-	@echo "Iniciando Redis..."
-	docker run -d -p 6379:6379 --name redis redis:7.0
-
-stopredis:
-	@echo "Deteniendo Redis..."
-	-docker stop redis
-	@echo "Eliminando contenedor..."
-	-docker rm redis
-
-runworker:
-	python -m celery -A hub worker --loglevel=info --pool=solo
-
-runflower:
-	python -m celery -A hub --broker=redis://localhost:6379/0 flower --port=5555
 	
 migrate:
 	python manage.py migrate
@@ -81,7 +57,7 @@ lint:
 	@echo ">>> Verificando estilo (flake8)..."
 	flake8 .
 	@echo ">>> Verificando calidad (pylint)..."
-	pylint --rcfile=.pylintrc hub/ recetario/ tests/ users/
+	DJANGO_SETTINGS_MODULE=hub.settings pylint --rcfile=.pylintrc hub/ recetario/ tests/ users/
 
 format:
 	isort . --skip env

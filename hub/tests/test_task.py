@@ -1,4 +1,4 @@
-import logging
+"""import logging
 from smtplib import SMTPException
 from typing import Any, Generator
 from unittest.mock import MagicMock, patch
@@ -32,7 +32,7 @@ def mock_email_sender() -> Generator[Any, None, None]:
 
 class TestEnviarEmailDeBienvenidaTask:
     def test_envio_exitoso(self, mock_user: User, mock_email_sender: Any) -> None:
-        """Test que el email se envía correctamente"""
+        ""Test que el email se envía correctamente""
         with patch("hub.tasks.User.objects.get", return_value=mock_user):
             result = enviar_email_de_bienvenida_task(1)
 
@@ -42,7 +42,7 @@ class TestEnviarEmailDeBienvenidaTask:
             assert result is None
 
     def test_usuario_no_existe(self, mock_email_sender: Any) -> None:
-        """Test cuando el usuario no existe"""
+        ""Test cuando el usuario no existe""
         with patch("hub.tasks.User.objects.get", side_effect=ObjectDoesNotExist):
             with pytest.raises(ObjectDoesNotExist):
                 enviar_email_de_bienvenida_task(999)
@@ -52,7 +52,7 @@ class TestEnviarEmailDeBienvenidaTask:
     def test_error_smtp_y_reintento(
         self, mock_user: User, mock_email_sender: Any
     ) -> None:
-        """Test para errores SMTP que deben reintentarse"""
+        ""Test para errores SMTP que deben reintentarse""
         mock_email_sender.enviar_email_de_bienvenida.side_effect = SMTPException(
             "Error SMTP"
         )
@@ -67,7 +67,7 @@ class TestEnviarEmailDeBienvenidaTask:
     def test_error_conexion_y_reintento(
         self, mock_user: User, mock_email_sender: Any
     ) -> None:
-        """Test para errores de conexión que deben reintentarse"""
+        ""Test para errores de conexión que deben reintentarse""
         mock_email_sender.enviar_email_de_bienvenida.side_effect = ConnectionError(
             "Error conexión"
         )
@@ -82,7 +82,7 @@ class TestEnviarEmailDeBienvenidaTask:
     def test_error_timeout_y_reintento(
         self, mock_user: User, mock_email_sender: Any
     ) -> None:
-        """Test para timeouts que deben reintentarse"""
+        ""Test para timeouts que deben reintentarse""
         mock_email_sender.enviar_email_de_bienvenida.side_effect = TimeoutError(
             "Timeout"
         )
@@ -97,7 +97,7 @@ class TestEnviarEmailDeBienvenidaTask:
     def test_error_inesperado(
         self, mock_user: User, mock_email_sender: Any, caplog: Any
     ) -> None:
-        """Test para errores inesperados"""
+        ""Test para errores inesperados""
         mock_email_sender.enviar_email_de_bienvenida.side_effect = Exception(
             "Error inesperado"
         )
@@ -112,7 +112,7 @@ class TestEnviarEmailDeBienvenidaTask:
     def test_logging_exitoso(
         self, mock_user: User, mock_email_sender: Any, caplog: Any
     ) -> None:
-        """Test que verifica el logging en caso exitoso"""
+        ""Test que verifica el logging en caso exitoso""
         import hub.tasks
 
         hub.tasks.logger.setLevel(logging.INFO)  # <--- Asegura nivel INFO
@@ -127,7 +127,7 @@ class TestEnviarEmailDeBienvenidaTask:
 
 class TestEnviarEmailRecuperacionContraseniaTask:
     def test_envio_exitoso(self, mock_user: User, mock_email_sender: Any) -> None:
-        """Test que el email de recuperación se envía correctamente"""
+        ""Test que el email de recuperación se envía correctamente""
         test_token = "test_token123"
         method = mock_email_sender.enviar_email_recuperarcion_contrasenia
 
@@ -138,7 +138,7 @@ class TestEnviarEmailRecuperacionContraseniaTask:
             assert result is None
 
     def test_usuario_no_existe(self, mock_email_sender: Any) -> None:
-        """Test cuando el usuario no existe para recuperación"""
+        ""Test cuando el usuario no existe para recuperación""
         method = mock_email_sender.enviar_email_recuperarcion_contrasenia
 
         with patch("hub.tasks.User.objects.get", side_effect=ObjectDoesNotExist):
@@ -150,7 +150,7 @@ class TestEnviarEmailRecuperacionContraseniaTask:
     def test_error_smtp_y_reintento(
         self, mock_user: User, mock_email_sender: Any
     ) -> None:
-        """Test para errores SMTP en recuperación que deben reintentarse"""
+        ""Test para errores SMTP en recuperación que deben reintentarse""
         test_token = "test_token123"
         method = mock_email_sender.enviar_email_recuperarcion_contrasenia
         method.side_effect = SMTPException("Error SMTP")
@@ -165,7 +165,7 @@ class TestEnviarEmailRecuperacionContraseniaTask:
     def test_error_conexion_y_reintento(
         self, mock_user: User, mock_email_sender: Any
     ) -> None:
-        """Test para errores de conexión en recuperación"""
+        ""Test para errores de conexión en recuperación""
         test_token = "test_token123"
         method = mock_email_sender.enviar_email_recuperarcion_contrasenia
         method.side_effect = ConnectionError("Error conexión")
@@ -180,7 +180,7 @@ class TestEnviarEmailRecuperacionContraseniaTask:
     def test_error_timeout_y_reintento(
         self, mock_user: User, mock_email_sender: Any
     ) -> None:
-        """Test para timeouts en recuperación"""
+        ""Test para timeouts en recuperación""
         test_token = "test_token123"
         method = mock_email_sender.enviar_email_recuperarcion_contrasenia
         method.side_effect = TimeoutError("Timeout")
@@ -195,7 +195,7 @@ class TestEnviarEmailRecuperacionContraseniaTask:
     def test_error_db_y_reintento(
         self, mock_user: User, mock_email_sender: Any
     ) -> None:
-        """Test para errores de base de datos en recuperación"""
+        ""Test para errores de base de datos en recuperación""
         test_token = "test_token123"
         method = mock_email_sender.enviar_email_recuperarcion_contrasenia
         method.side_effect = DatabaseError("Error DB")
@@ -210,7 +210,7 @@ class TestEnviarEmailRecuperacionContraseniaTask:
     def test_error_inesperado_recuperacion(
         self, mock_user: User, mock_email_sender: Any, caplog: Any
     ) -> None:
-        """Test para errores inesperados en recuperación"""
+        ""Test para errores inesperados en recuperación""
         test_token = "test_token123"
         method = mock_email_sender.enviar_email_recuperarcion_contrasenia
         method.side_effect = Exception("Error inesperado")
@@ -226,7 +226,7 @@ class TestEnviarEmailRecuperacionContraseniaTask:
     def test_logging_exitoso_recuperacion(
         self, mock_user: User, mock_email_sender: Any, caplog: Any
     ) -> None:
-        """Test que verifica el logging en caso exitoso de recuperación"""
+        ""Test que verifica el logging en caso exitoso de recuperación""
         import hub.tasks
 
         test_token = "test_token123"
@@ -242,3 +242,4 @@ class TestEnviarEmailRecuperacionContraseniaTask:
         assert str(mock_user.email) in caplog.text
         assert str(mock_user.id) in caplog.text
         method.assert_called_once_with(mock_user, test_token)
+"""

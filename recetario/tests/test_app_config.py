@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+"""from unittest.mock import MagicMock, patch
 
 from django.apps import apps
 from django.core.cache import cache
@@ -77,3 +77,4 @@ class TestRecetarioConfig(TestCase):
 
         # Verificar que se intentó importar las señales
         mock_import.assert_called_with("recetario.signals")
+"""

@@ -18,7 +18,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from hub.tasks import enviar_email_recuperarcion_contrasenia_task
+from hub.tasks import enviar_email_recuperacion
 
 from .authentication import JWTAuthentication
 from .models import User
@@ -181,7 +181,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
                 "iat": int(now.timestamp()),
             }
             token = jwt.encode(payload, "secret", algorithm="HS256")
-            enviar_email_recuperarcion_contrasenia_task.delay(user.id, token)
+            enviar_email_recuperacion(user.id, token)
         except User.DoesNotExist as e:
             logger.error("Ocurrió un error: %s", str(e), exc_info=True)
             return Response(

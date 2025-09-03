@@ -45,7 +45,8 @@ class RecetarioConfig(AppConfig):
                     precargar_totales_usuarios,
                 )
 
-                precargar_totales_usuarios.delay()
+                logger.info("Precargando totales de usuarios en cache...")
+                precargar_totales_usuarios()
                 cache.set("totales_precargados", True, timeout=3600)
         except (OperationalError, ProgrammingError) as e:
             logger.warning("Error al verificar tablas: %s. Reintentando...", e)

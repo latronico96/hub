@@ -36,10 +36,8 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 STATIC_FRONTEND_URL: str = (
-    os.getenv("DJANGO_STATIC_FRONTEND_URL") or "http://localhost:3000"
+    os.getenv("DJANGO_STATIC_FRONTEND_URL") or "http://kubernetes.docker.internal"
 )
-REDIS_SERVER: str = os.getenv("DJANGO_REDIS_SERVER") or "redis://127.0.0.1:6379/"
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -57,6 +55,7 @@ ALLOWED_HOSTS = [
     .replace("https://", ""),
     "recetascocol.com.ar",
     "www.recetascocol.com.ar",
+    "kubernetes.docker.internal",
 ]
 
 # Application definition
@@ -86,7 +85,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "hub.urls"
-CORS_ALLOWED_ORIGINS = [STATIC_FRONTEND_URL]
+CORS_ALLOWED_ORIGINS = [
+    STATIC_FRONTEND_URL,
+    "http://kubernetes.docker.internal",
+    "http://localhost:3000",
+]
 
 CORS_ALLOW_HEADERS = [
     "content-type",
@@ -119,17 +122,14 @@ TEMPLATES = [
 WSGI_APPLICATION = "hub.wsgi.application"
 DATABASES_PATH: str = os.getenv("DJANGO_DATABASES_PATH") or str(BASE_DIR / "db.sqlite3")
 
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "hub"),
-        "USER": os.getenv("POSTGRES_USER", "postgres"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "RECETASCOCOL"),
-        "HOST": os.getenv("DATABASE_HOST", "localhost"),
-        "PORT": os.getenv("DATABASE_PORT", "5432"),
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "hub",
+        "USER": "admin",
+        "PASSWORD": "",
+        "HOST": "database-recetario1-instance-1.c8zegoa48aj2.us-east-1.rds.amazonaws.com",
+        "PORT": "3306",
     }
 }
 
@@ -209,10 +209,6 @@ LOGGING = {
             "level": "WARNING",
             "propagate": True,
         },
-        "hub.tasks": {  # Ajusta esto al módulo donde tienes tus tareas Celery
-            "handlers": ["mail_file", "console"],
-            "level": "WARNING",
-        },
         "django.db.backends": {  # Agrega este logger para depurar consultas SQL
             "handlers": ["console"],
             "level": "WARNING",
@@ -249,11 +245,7 @@ else:
 
 CACHES = {
     "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_SERVER + "1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
 
@@ -265,18 +257,11 @@ if is_testing:
         }
     }
 
-CELERY_BROKER_URL = REDIS_SERVER + "0"
-CELERY_RESULT_BACKEND = REDIS_SERVER + "2"
-
-CELERY_BEAT_SCHEDULE = {
-    "precargar_totales_diarios": {
-        "task": "recetario.tasks.precargar_totales_usuarios",
-        "schedule": 86400.0,
-    },
-}
-
-if is_testing:
-    CELERY_TASK_ALWAYS_EAGER = True
-    CELERY_TASK_EAGER_PROPAGATES = True
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
+    }
 
 print(f"[SETTINGS] ENV is_testing: {is_testing}")

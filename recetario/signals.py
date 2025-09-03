@@ -3,7 +3,7 @@ from typing import Any, Type
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from hub.tasks import enviar_email_de_bienvenida_task
+from hub.tasks import enviar_email_de_bienvenida
 from users.models import User
 
 from .models import Producto, Receta, Unidad
@@ -33,7 +33,7 @@ def handle_user_creation(
         PermissionManager.assign_permissions_to_user(
             instance, PermissionManager.USER_ROLE
         )
-        enviar_email_de_bienvenida_task.delay(instance.id)
+        enviar_email_de_bienvenida(instance.id)
 
 
 @receiver(post_save, sender=Unidad)

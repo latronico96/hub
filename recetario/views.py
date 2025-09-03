@@ -1,7 +1,9 @@
 from typing import Type
 
-from django.db.models import QuerySet
+from django.db.models import Exists, F, OuterRef, QuerySet
+from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (
     BasePermission,
     DjangoModelPermissions,
@@ -13,9 +15,10 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from recetario.group_concat import GroupConcat
 from users.service import UserService
 
-from .models import Producto, Receta, Unidad
+from .models import Ingrediente, Producto, Receta, Unidad
 from .serializers import (
     ProductoSerializer,
     RecetaGrillaSerializer,
@@ -33,14 +36,33 @@ class UnidadViewSet(ModelViewSet[Unidad]):
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
 
     def get_queryset(self) -> QuerySet[Unidad]:
-        if self.user_service.is_admin_and_authenticated(self.request):
-            return Unidad.objects.all()
-        return Unidad.objects.filter(
-            user=self.user_service.get_authenticated_user(self.request)
+        all_unidades = Unidad.objects.all().order_by("nombre")
+
+        if not self.user_service.is_admin_and_authenticated(self.request):
+            all_unidades = all_unidades.filter(
+                user=self.user_service.get_authenticated_user(self.request)
+            )
+
+        return all_unidades.annotate(
+            has_product=Exists(Producto.objects.filter(unidad=OuterRef("pk"))),
+            has_ingrediente=Exists(Ingrediente.objects.filter(unidad=OuterRef("pk"))),
         )
 
     def perform_create(self, serializer: BaseSerializer[Unidad]) -> None:
         serializer.save(user=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if (
+            Producto.objects.filter(unidad=instance).exists()
+            or Ingrediente.objects.filter(unidad=instance).exists()
+        ):
+            return Response(
+                {"detail": "La unidad está en uso y no se puede borrar."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # pylint: disable=too-many-ancestors
@@ -51,18 +73,32 @@ class ProductoViewSet(ModelViewSet[Producto]):
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
 
     def get_queryset(self) -> QuerySet[Producto]:
+        all_productos = Producto.objects.all().order_by("nombre")
         if self.user_service.is_admin_and_authenticated(self.request):
-            return Producto.objects.all()
-        return Producto.objects.filter(
-            user=self.user_service.get_authenticated_user(self.request)
+            all_productos = all_productos.filter(
+                user=self.user_service.get_authenticated_user(self.request)
+            ).order_by("nombre")
+        return all_productos.annotate(
+            has_ingrediente=Exists(Ingrediente.objects.filter(unidad=OuterRef("pk"))),
         )
 
     def perform_create(self, serializer: BaseSerializer[Producto]) -> None:
         serializer.save(user=self.request.user)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if Ingrediente.objects.filter(producto=instance).exists():
+            return Response(
+                {"detail": "El producto está en uso y no se puede borrar."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 # pylint: disable=too-many-ancestors
 class RecetaViewSet(ModelViewSet[Receta]):
+    pagination_class = PageNumberPagination
     queryset = Receta.objects.all()
     serializer_class = RecetaSerializer
     user_service = UserService()
@@ -85,14 +121,25 @@ class RecetaViewSet(ModelViewSet[Receta]):
         permission_classes=[IsAuthenticated, DjangoModelPermissions],
     )
     def grilla_recetas(self, request: Request) -> Response:
+        ingredientes_agg = GroupConcat(
+            F("ingredientes__producto__nombre"), separator=", "
+        )
+
         if self.user_service.is_admin_and_authenticated(self.request):
-            recetas = Receta.objects.all()
+            recetas = Receta.objects.annotate(
+                ingredientes_str=ingredientes_agg
+            ).order_by("nombre")
         else:
-            recetas = Receta.objects.filter(
-                user=self.user_service.get_authenticated_user(self.request)
+            recetas = (
+                Receta.objects.filter(
+                    user=self.user_service.get_authenticated_user(self.request)
+                )
+                .annotate(ingredientes_str=ingredientes_agg)
+                .order_by("nombre")
             )
+
         serializer = RecetaGrillaSerializer(recetas, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class DashboardView(APIView):
