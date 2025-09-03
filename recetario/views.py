@@ -51,7 +51,7 @@ class UnidadViewSet(ModelViewSet[Unidad]):
     def perform_create(self, serializer: BaseSerializer[Unidad]) -> None:
         serializer.save(user=self.request.user)
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request: Request, *args: object, **kwargs: object) -> Response:
         instance = self.get_object()
         if (
             Producto.objects.filter(unidad=instance).exists()
@@ -85,7 +85,7 @@ class ProductoViewSet(ModelViewSet[Producto]):
     def perform_create(self, serializer: BaseSerializer[Producto]) -> None:
         serializer.save(user=self.request.user)
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request: Request, *args: object, **kwargs: object) -> Response:
         instance = self.get_object()
         if Ingrediente.objects.filter(producto=instance).exists():
             return Response(

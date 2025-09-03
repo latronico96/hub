@@ -1,4 +1,7 @@
-from django.db.models import Aggregate, CharField
+from ast import Expression
+from typing import Any, Optional, Union
+from django.db.models import Aggregate, CharField, F
+from django.db.models.expressions import Combinable
 
 
 class GroupConcat(Aggregate):
@@ -7,11 +10,16 @@ class GroupConcat(Aggregate):
     allow_distinct = True
 
     def __init__(
-        self, expression, distinct=False, separator=", ", ordering=None, **extra
-    ):
+        self,
+        expression: Union[Expression, F, str],
+        distinct: bool = False,
+        separator: Optional[str] = ", ",
+        ordering: Optional[str] = None,
+        **extra: Any,
+    ) -> None:
         super().__init__(
             expression,
-            distinct="DISTINCT " if distinct else "",
+            distinct=distinct,
             separator=f' SEPARATOR "{separator}"' if separator else "",
             ordering=f" ORDER BY {ordering}" if ordering else "",
             output_field=CharField(),
@@ -19,11 +27,11 @@ class GroupConcat(Aggregate):
         )
 
     # Implementamos métodos abstractos para Combinable
-    def __rand__(self, other):
+    def __rand__(self, other: object) -> Combinable:
         return NotImplemented
 
-    def __ror__(self, other):
+    def __ror__(self, other: object) -> Combinable:
         return NotImplemented
 
-    def __rxor__(self, other):
+    def __rxor__(self, other: object) -> Combinable:
         return NotImplemented
