@@ -2,7 +2,8 @@ from typing import Any, Dict, List
 
 from rest_framework import serializers
 
-from .models import Ingrediente, Producto, Receta, Unidad
+from .models import Ingrediente, Producto, Receta, Unidad, MovimientoDeStock
+from django.db.models import Sum, Case, When, FloatField, F
 
 
 class UnidadSerializer(serializers.ModelSerializer[Unidad]):
@@ -31,10 +32,20 @@ class ProductoSerializer(serializers.ModelSerializer[Producto]):
         source="unidad",
     )
     can_be_deleted = serializers.SerializerMethodField()
+    stock = serializers.SerializerMethodField()
 
     class Meta:
         model = Producto
-        fields = ["id", "nombre", "cantidad", "unidadId", "precio", "can_be_deleted"]
+        fields = [
+            "id",
+            "nombre",
+            "cantidad",
+            "unidadId",
+            "precio",
+            "can_be_deleted",
+            "stock",
+            "stock_minimo",
+        ]
         read_only_fields = ["id"]
 
     def get_can_be_deleted(self, obj: Producto) -> bool:
@@ -42,6 +53,22 @@ class ProductoSerializer(serializers.ModelSerializer[Producto]):
         if has_ingrediente is None:
             has_ingrediente = Ingrediente.objects.filter(producto=obj).exists()
         return not has_ingrediente
+
+    def get_stock(self, obj: Producto) -> float:
+        result = (
+            MovimientoDeStock.objects
+            .filter(producto=obj)
+            .aggregate(
+                total_stock=Sum(
+                    Case(
+                        When(tipo='ENTRADA', then='cantidad'),
+                        When(tipo='SALIDA', then=-1 * F('cantidad')),
+                        output_field=FloatField(),
+                    )
+                )
+            )
+        )
+        return result['total_stock'] or 0.0
 
 
 class IngredienteSerializer(serializers.ModelSerializer[Ingrediente]):
@@ -140,7 +167,30 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
 
 class RecetaGrillaSerializer(serializers.ModelSerializer[Receta]):
     ingredientes = serializers.CharField(source="ingredientes_str", read_only=True)
+    costo_unidad = serializers.FloatField(read_only=True)
+    costo = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Receta
-        fields = ["id", "nombre", "ingredientes"]
+        fields = [
+            "id",
+            "nombre",
+            "ingredientes",
+            "precio",
+            "precio_unidad",
+            "rinde",
+            "costo_unidad",
+            "costo"
+        ]
+
+
+class MovimientoDeStockSerializer(serializers.ModelSerializer[MovimientoDeStock]):
+    productoId = serializers.PrimaryKeyRelatedField(
+        queryset=Producto.objects.all(),
+        source="producto",
+    )
+
+    class Meta:
+        model = MovimientoDeStock
+        fields = ["id", "productoId", "cantidad", "fecha", "tipo"]
+        read_only_fields = ["id"]

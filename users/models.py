@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 from django.apps import apps
@@ -21,6 +22,7 @@ class UserManager(BaseUserManager["User"]):
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
+        user.plan = self._get_plan()
         user.save(using=self._db)
         return user
 
@@ -30,6 +32,27 @@ class UserManager(BaseUserManager["User"]):
         extra_fields.setdefault("is_admin", True)
 
         return self.create_user(email, password, name=email)
+
+    def _get_plan(self) -> Plan:
+        plan, _ = Plan.objects.get_or_create(
+            nombre="Gratis", defaults={"precio": Decimal("0.00")}
+        )
+        return plan
+
+
+class Plan(models.Model):
+    id = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=100)
+    precio = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        verbose_name = "Plan"
+        verbose_name_plural = "Planes"
+        ordering = ["nombre"]
+        permissions: list[Permission] = []
+
+    def __str__(self) -> str:
+        return str(self.nombre)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -41,6 +64,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_admin = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     user_permissions = models.ManyToManyField(Permission, blank=True)
+    plan = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True, blank=True)
 
     objects: UserManager = UserManager()
 

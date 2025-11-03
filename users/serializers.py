@@ -20,6 +20,7 @@ class UserSerializer(ModelSerializer[User]):
             "is_admin",
             "user_permissions",
             "can_be_deleted",
+            "plan",
         ]
 
     def to_representation(self, instance: User) -> dict[str, Any]:

@@ -38,8 +38,6 @@ STATICFILES_DIRS = [
 STATIC_FRONTEND_URL: str = (
     os.getenv("DJANGO_STATIC_FRONTEND_URL") or "http://kubernetes.docker.internal"
 )
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-mfqy7^=&$q%k!2ec_98w7quqk!2yy!wbb6z^h1th0c02io*9n$"
@@ -48,6 +46,7 @@ SECRET_KEY = "django-insecure-mfqy7^=&$q%k!2ec_98w7quqk!2yy!wbb6z^h1th0c02io*9n$
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    "6ceefd73edf6.ngrok-free.app",
     "127.0.0.1",
     "localhost",
     os.getenv("DJANGO_STATIC_FRONTEND_URL", "")
@@ -74,35 +73,48 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.middleware.common.CommonMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware", 
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 ROOT_URLCONF = "hub.urls"
-CORS_ALLOWED_ORIGINS = [
+CORS_ALLOWED_ORIGINS = [ 
     STATIC_FRONTEND_URL,
     "http://kubernetes.docker.internal",
     "http://localhost:3000",
+    "http://localhost:8080",
+]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https:\/\/[a-z0-9\-]+\.ngrok-free\.app$",
+    r"^http://localhost:3000$",
 ]
 
-CORS_ALLOW_HEADERS = [
-    "content-type",
-    "authorization",
-    "x-csrftoken",
-    "credentials",
-    "accept",
+print(CORS_ALLOWED_ORIGINS)
+print(ALLOWED_HOSTS)
+
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
     "accept-encoding",
     "origin",
-    "user-agent",
+    "x-csrftoken",
+    "X-Forwarded-Proto",
+    "X-Forwarded-For",
 ]
 
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    r"https://.*\.ngrok-free\.app",
+    "http://localhost:3000",
+]
 
 TEMPLATES = [
     {
@@ -126,9 +138,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "hub",
-        "USER": "admin",
-        "PASSWORD": "",
-        "HOST": "database-recetario1-instance-1.c8zegoa48aj2.us-east-1.rds.amazonaws.com",
+        "USER": "root",
+        "PASSWORD": "root",
+        "HOST": "localhost",
         "PORT": "3306",
     }
 }
@@ -249,6 +261,14 @@ CACHES = {
     }
 }
 
+MERCADOPAGO = {
+    "access_token": "APP_USR-4446202577342207-071322-3b7ff4a21b043b24940049a1d86b7376-158900220",
+    "sandbox": True,
+    "success_url": "https://tu-dominio.com/mp/success/",
+    "failure_url": "https://tu-dominio.com/mp/failure/",
+    "notification_url": "https://tu-dominio.com/mp/notification/",
+}
+
 # Usar DummyCache en tests para deshabilitar el cache real
 if is_testing:
     CACHES = {
@@ -263,5 +283,9 @@ if is_testing:
             "NAME": ":memory:",
         }
     }
+
+MERCADOPAGO["access_token"] = (
+    "APP_USR-3791671169099411-092508-b980bb9b28c05e6497f82009fb7fcc53-2633698219"
+)
 
 print(f"[SETTINGS] ENV is_testing: {is_testing}")

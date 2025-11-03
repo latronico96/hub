@@ -7,6 +7,11 @@ import sys
 from typing import Sequence
 
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hub.settings")

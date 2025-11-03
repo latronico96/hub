@@ -10,6 +10,8 @@ from django.db.models.signals import post_migrate
 from django.db.utils import OperationalError, ProgrammingError
 from django.dispatch import receiver
 
+from hub.settings import is_testing
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,6 +25,12 @@ class RecetarioConfig(AppConfig):
 
         # Registrar el manejador post-migrate
         self._register_post_migrate_handler()
+
+        # 2. Solo lanzar el hilo si NO estamos haciendo testing
+        if not is_testing:
+            # Intentar precargar cache al iniciar (si las tablas existen)
+            threading.Thread(target=self._try_precache_data, daemon=True).start()
+        # === FIN DE LA CORRECCIÓN ===
 
         # Intentar precargar cache al iniciar (si las tablas existen)
         threading.Thread(target=self._try_precache_data, daemon=True).start()

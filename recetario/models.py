@@ -60,6 +60,7 @@ class Producto(models.Model):
     )
     precio = models.FloatField()
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="productos")
+    stock_minimo = models.FloatField(default=0)
 
     def __str__(self) -> str:
         return str(self.nombre)
@@ -116,3 +117,39 @@ class Ingrediente(models.Model):
     class Meta:
         verbose_name = "Ingrediente"
         verbose_name_plural = "Ingredientes"
+
+
+class MovimientoDeStock(models.Model):
+    id = models.AutoField(primary_key=True)
+    
+    producto = models.ForeignKey(
+        Producto, on_delete=models.PROTECT, related_name="movimientos_de_stock"
+    )
+    cantidad = models.FloatField()
+    fecha = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="movimientos_de_stock"
+    )
+    TIPO_CHOICES = [
+        ('ENTRADA', 'Entrada'),
+        ('SALIDA', 'Salida'),
+    ]
+
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+
+    def __str__(self) -> str:
+        return (
+            f"Movimiento de {self.cantidad} de {self.producto.nombre}"
+            f" el {self.fecha}"
+        )
+
+    @property
+    def unidad(self):
+        return self.producto.unidad
+
+    class Meta:
+        verbose_name = "Movimiento de Stock"
+        verbose_name_plural = "Movimientos de Stock"
+        ordering = ["-fecha"]
+        permissions: list[Permission] = []
+
