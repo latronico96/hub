@@ -10,8 +10,14 @@ from django.db.models import (
     Sum,
     When,
     Value,
+    Max,
+    TextField,
 )
-from django.db.models.functions import Round, Coalesce
+from django.db.models.functions import Round, Coalesce, Concat, Cast
+from django.forms import CharField, IntegerField
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from openpyxl import Workbook
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -25,13 +31,23 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from weasyprint import HTML
 
 from recetario.group_concat import GroupConcat
 from users.service import UserService
 
 
-from .models import Ingrediente, Producto, Receta, Unidad, MovimientoDeStock
+from .models import (
+    Ingrediente,
+    MovimientoDetalle,
+    Preventa,
+    Producto,
+    Receta,
+    Unidad,
+    MovimientoDeStock,
+)
 from .serializers import (
+    PreventaSerializer,
     ProductoSerializer,
     RecetaGrillaSerializer,
     RecetaSerializer,
@@ -91,12 +107,12 @@ class ProductoViewSet(ModelViewSet[Producto]):
         stock_calculation = Sum(
             Case(
                 When(
-                    movimientos_de_stock__tipo='ENTRADA',
-                    then='movimientos_de_stock__cantidad'
+                    detalles_de_movimiento__movimiento__tipo='ENTRADA',
+                    then=F('detalles_de_movimiento__cantidad')
                 ),
                 When(
-                    movimientos_de_stock__tipo='SALIDA',
-                    then=-1 * F('movimientos_de_stock__cantidad')
+                    detalles_de_movimiento__movimiento__tipo='SALIDA',
+                    then=-1 * F('detalles_de_movimiento__cantidad')
                 ),
                 output_field=FloatField(),
             )
@@ -207,36 +223,247 @@ class DashboardView(APIView):
 
 
 class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
-    queryset = MovimientoDeStock.objects.all()
+    queryset = MovimientoDeStock.objects.prefetch_related("detalles__producto").all()
     serializer_class = MovimientoDeStockSerializer
     user_service = UserService()
     permission_classes: list[Type[BasePermission]] = [IsAuthenticated]
 
-    def get_queryset(self) -> QuerySet[Unidad]:
-        all_movimientos = MovimientoDeStock.objects.all().order_by("fecha")
-
+    def get_queryset(self) -> QuerySet[MovimientoDeStock]:
+        qs = super().get_queryset().order_by("-fecha")
+        
         if not self.user_service.is_admin_and_authenticated(self.request):
-            all_movimientos = all_movimientos.filter(
+            qs = qs.filter(
                 user=self.user_service.get_authenticated_user(self.request)
             )
+        return qs
 
-        return all_movimientos.annotate(
-            has_product=Exists(Producto.objects.filter(unidad=OuterRef("pk"))),
-            has_ingrediente=Exists(Ingrediente.objects.filter(unidad=OuterRef("pk"))),
-        )
-
-    def perform_create(self, serializer: BaseSerializer[Unidad]) -> None:
+    def perform_create(self, serializer: BaseSerializer[MovimientoDeStock]) -> None:
         serializer.save(user=self.request.user)
 
     def destroy(self, request: Request, *args: object, **kwargs: object) -> Response:
         instance = self.get_object()
-        if (
-            Producto.objects.filter(unidad=instance).exists()
-            or Ingrediente.objects.filter(unidad=instance).exists()
-        ):
-            return Response(
-                {"detail": "La unidad está en uso y no se puede borrar."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        instance.delete()
+        instance.delete()  # esto borra también los detalles por CASCADE
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="excel",
+        permission_classes=[IsAuthenticated],
+    )
+    def exportar_excel(self, request: Request) -> Response:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Productos"
+
+        # encabezados
+        ws.append(["ID", "Nombre", "Precio", "Stock"])
+
+        # datos
+        for p in Producto.objects.all():
+            ws.append([p.id, p.nombre, p.precio, p.stock_minimo])
+
+        # preparar respuesta
+        response = HttpResponse(
+            content_type=(
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet"
+            )
+        )
+        response["Content-Disposition"] = 'attachment; filename="productos.xlsx"'
+        wb.save(response)
+        return response
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="pdf",
+        permission_classes=[IsAuthenticated],
+    )
+    def exportar_pdf(self, request: Request) -> Response:
+        productos = (
+            Producto.objects
+            .annotate(
+                ingresos=Sum(
+                    Case(
+                        When(
+                            detalles_de_movimiento__movimiento__tipo='ENTRADA',
+                            then=F('detalles_de_movimiento__cantidad')
+                        ),
+                        default=0,
+                        output_field=FloatField()
+                    )
+                ),
+                egresos=Sum(
+                    Case(
+                        When(
+                            detalles_de_movimiento__movimiento__tipo='SALIDA',
+                            then=F('detalles_de_movimiento__cantidad')
+                        ),
+                        default=0,
+                        output_field=FloatField()
+                    )
+                ),
+            )
+            .annotate(
+                stock_actual=F("ingresos") - F("egresos"),
+                ultima_fecha=Max("detalles_de_movimiento__movimiento__fecha"),
+                estado=Case(
+                    When(stock_actual__lte=0, then=Value("Sin Stock")),
+                    When(stock_actual__lte=F("stock_minimo"),
+                        stock_actual__gt=0,
+                        then=Value("Bajo Stock")),
+                    default=Value("Con Stock")
+                ),
+                cod_Nombre=Concat(
+                    Cast("id", output_field=TextField()), Value(" - "), F("nombre"),
+                    output_field=TextField()
+                ),
+            )
+        )
+        html_string = render_to_string(
+            "reporte_productos.html",
+            {"productos": productos}
+        )
+        pdf = HTML(string=html_string).write_pdf()
+
+        response = HttpResponse(pdf, content_type="application/pdf")
+        iframe = self.request.query_params.get("iframe", None)
+        if iframe is not None:
+            response["Content-Disposition"] = 'inline; filename="productos.pdf"'
+        else:
+            response["Content-Disposition"] = 'attachment; filename="productos.pdf"'
+
+        response["X-Frame-Options"] = "ALLOWALL"
+        response["Content-Security-Policy"] = (
+            "frame-ancestors 'self' http://localhost:3000"
+        )
+        response["Cross-Origin-Opener-Policy"] = "unsafe-none"
+
+        return response
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="pdfr",
+        permission_classes=[IsAuthenticated],
+    )
+    def exportar_pdf2(self, request: Request) -> Response:
+        id = self.request.query_params.get("id", None)
+
+        remito = MovimientoDeStock.objects.all().get(pk=id)
+
+        html_string = render_to_string(
+            "remito.html",
+            {"remito": remito}
+        )
+        pdf = HTML(string=html_string).write_pdf()
+
+        response = HttpResponse(pdf, content_type="application/pdf")
+        iframe = self.request.query_params.get("iframe", None)
+        if iframe is not None:
+            response["Content-Disposition"] = 'inline; filename="productos.pdf"'
+        else:
+            response["Content-Disposition"] = 'attachment; filename="productos.pdf"'
+
+        response["X-Frame-Options"] = "ALLOWALL"
+        response["Content-Security-Policy"] = (
+            "frame-ancestors 'self' http://localhost:3000"
+        )
+        response["Cross-Origin-Opener-Policy"] = "unsafe-none"
+
+        return response
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="pdf_acumulados",
+        permission_classes=[IsAuthenticated],
+    )
+    def exportar_pdf_productos_acumulados(self, request: Request) -> Response:  
+        productos = (
+            Producto.objects
+            .annotate(
+                entradas=Sum(
+                    Case(
+                        When(
+                            detalles_de_movimiento__movimiento__tipo='ENTRADA',
+                            then=F('detalles_de_movimiento__cantidad')
+                        ),
+                        default=0,
+                        output_field=FloatField()
+                    )
+                ),
+                salidas=Sum(
+                    Case(
+                        When(
+                            detalles_de_movimiento__movimiento__tipo='SALIDA',
+                            then=F('detalles_de_movimiento__cantidad')
+                        ),
+                        default=0,
+                        output_field=FloatField()
+                    )
+                ),
+                ultima_fecha=Max("detalles_de_movimiento__movimiento__fecha"),
+            )
+            .order_by("nombre")
+        )
+
+        html_string = render_to_string(
+            "reporte_productos_acumulados.html",
+            {"productos": productos}
+        )
+
+        pdf = HTML(string=html_string).write_pdf()
+
+        response = HttpResponse(pdf, content_type="application/pdf")
+        iframe = self.request.query_params.get("iframe", None)
+        if iframe is not None:
+            response["Content-Disposition"] = 'inline; filename="productos.pdf"'
+        else:
+            response["Content-Disposition"] = 'attachment; filename="productos.pdf"'
+
+        response["X-Frame-Options"] = "ALLOWALL"
+        response["Content-Security-Policy"] = (
+            "frame-ancestors 'self' http://localhost:3000"
+        )
+        response["Cross-Origin-Opener-Policy"] = "unsafe-none"
+
+        return response
+
+
+class PreventaViewSet(ModelViewSet[Preventa]):
+    queryset = Preventa.objects.prefetch_related("detalles__producto").all()
+    serializer_class = PreventaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=["post"], url_path="confirmar")
+    def confirmar_preventa(self, request, pk=None):
+        preventa = self.get_object()
+
+        if preventa.estado != "PENDIENTE":
+            return Response(
+                {"detail": "La preventa ya fue procesada."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        movimiento = MovimientoDeStock.objects.create(
+            user=request.user,
+            tipo="SALIDA",
+            observaciones=f"Salida generada por preventa #{preventa.id}"
+        )
+
+        for detalle in preventa.detalles.all():
+            MovimientoDetalle.objects.create(
+                movimiento=movimiento,
+                producto=detalle.producto,
+                cantidad=detalle.cantidad
+            )
+
+        preventa.movimiento = movimiento
+        preventa.estado = "CONFIRMADA"
+        preventa.save()
+
+        return Response({"detail": "Preventa confirmada y movimiento generado."})

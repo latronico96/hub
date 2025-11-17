@@ -1,3 +1,4 @@
+import traceback
 import jwt
 from django.http import HttpRequest
 from rest_framework.authentication import BaseAuthentication
@@ -21,17 +22,19 @@ class JWTAuthentication(BaseAuthentication):
         return (user, None)
 
     @staticmethod
-    def get_user(token: str) -> User:
+    def get_user(token: str) -> User | None:
         if not token or not token.strip():
             raise AuthenticationFailed("Token is missing or empty")
-
         try:
             payload = jwt.decode(token, "secret", algorithms=["HS256"])
             user = User.objects.get(id=payload["id"])
             return user
         except User.DoesNotExist as exc:
+            traceback.print_exc()
             raise AuthenticationFailed("User not found") from exc
-        except jwt.ExpiredSignatureError as exc:
-            raise AuthenticationFailed("Token expired") from exc
+        except jwt.ExpiredSignatureError:
+            traceback.print_exc()
+            return None
         except jwt.InvalidTokenError as exc:
+            traceback.print_exc()
             raise AuthenticationFailed("Invalid token") from exc

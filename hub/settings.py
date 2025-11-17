@@ -116,10 +116,14 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
 ]
 
+print("templates")
+print(BASE_DIR / "templates")
+
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -133,17 +137,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "hub.wsgi.application"
 DATABASES_PATH: str = os.getenv("DJANGO_DATABASES_PATH") or str(BASE_DIR / "db.sqlite3")
-
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "hub",
-        "USER": "root",
-        "PASSWORD": "root",
-        "HOST": "localhost",
-        "PORT": "3306",
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": "hub",
+#         "USER": "root",
+#         "PASSWORD": "root",
+#         "HOST": "localhost",
+#         "PORT": "3306",
+#     }
+# }
+
+
+print(DATABASES)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

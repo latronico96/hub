@@ -1,0 +1,31 @@
+<h2 style="text-align:center; margin-bottom: 20px;">Acumulado de Movimientos por Producto</h2>
+
+<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+  <thead>
+    <tr style="background: #f0f0f0; font-weight: bold; text-align: left;">
+      <th style="padding: 8px; border-bottom: 2px solid #ccc;">Producto</th>
+      <th style="padding: 8px; border-bottom: 2px solid #ccc;">Entradas</th>
+      <th style="padding: 8px; border-bottom: 2px solid #ccc;">Salidas</th>
+      <th style="padding: 8px; border-bottom: 2px solid #ccc;">Último Movimiento</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for p in productos %}
+    <tr style="background: {% cycle '#ffffff' '#f9f9f9' %};">
+      <td style="padding: 6px; border-bottom: 1px solid #eee;">{{ p.nombre }}</td>
+      <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right;">
+        {{ p.entradas|default_if_none:"0" }}
+      </td>
+      <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right;">
+        {{ p.salidas|default_if_none:"0" }}
+      </td>
+      <td style="padding: 6px; border-bottom: 1px solid #eee;">
+        {% if p.ultima_fecha %}
+          {{ p.ultima_fecha|date:"d/m/Y" }}
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

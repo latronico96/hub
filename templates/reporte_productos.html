@@ -1,0 +1,27 @@
+<h2 style="text-align:center; margin-bottom: 20px;">Reporte de Productos</h2>
+
+<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+  <thead>
+    <tr style="background: #f0f0f0; font-weight: bold; text-align: left;">
+      <th style="padding: 8px; border-bottom: 2px solid #ccc;">Producto</th>
+      <th style="padding: 8px; border-bottom: 2px solid #ccc;">Stock</th>
+      <th style="padding: 8px; border-bottom: 2px solid #ccc;">Mínimo</th>
+      <th style="padding: 8px; border-bottom: 2px solid #ccc;">Estado</th>
+      <th style="padding: 8px; border-bottom: 2px solid #ccc;">Último Movimiento</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for p in productos %}
+    <tr style="background: {% cycle '#ffffff' '#f9f9f9' %};">
+      <td style="padding: 6px; border-bottom: 1px solid #eee;">{{ p.cod_Nombre }}</td>
+      <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right;">{{ p.stock_actual }}</td>
+      <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right;">{{ p.stock_minimo }}</td>
+      <td style="padding: 6px; border-bottom: 1px solid #eee;">{{ p.estado }}</td>
+      <td style="padding: 6px; border-bottom: 1px solid #eee;">
+        {{ p.ultima_fecha|default_if_none:""|date:"d/m/Y" }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

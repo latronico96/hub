@@ -99,6 +99,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         name = request.data.get("name")
         email = request.data.get("email")
         password = request.data.get("password")
+        print(name, email, password)
 
         if not email or not password or not name:
             return Response(

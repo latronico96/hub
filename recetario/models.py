@@ -121,11 +121,6 @@ class Ingrediente(models.Model):
 
 class MovimientoDeStock(models.Model):
     id = models.AutoField(primary_key=True)
-    
-    producto = models.ForeignKey(
-        Producto, on_delete=models.PROTECT, related_name="movimientos_de_stock"
-    )
-    cantidad = models.FloatField()
     fecha = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name="movimientos_de_stock"
@@ -134,22 +129,99 @@ class MovimientoDeStock(models.Model):
         ('ENTRADA', 'Entrada'),
         ('SALIDA', 'Salida'),
     ]
-
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
 
-    def __str__(self) -> str:
-        return (
-            f"Movimiento de {self.cantidad} de {self.producto.nombre}"
-            f" el {self.fecha}"
-        )
+    nombre = models.TextField(blank=True, null=True)
+    calle = models.TextField(blank=True, null=True)
+    localidad = models.TextField(blank=True, null=True)
+    observaciones = models.TextField(blank=True, null=True)
 
-    @property
-    def unidad(self):
-        return self.producto.unidad
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.fecha:%d/%m/%Y}"
 
     class Meta:
         verbose_name = "Movimiento de Stock"
         verbose_name_plural = "Movimientos de Stock"
         ordering = ["-fecha"]
-        permissions: list[Permission] = []
+
+
+class MovimientoDetalle(models.Model):
+    movimiento = models.ForeignKey(
+        MovimientoDeStock,
+        on_delete=models.CASCADE,
+        related_name="detalles"
+    )
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.PROTECT,
+        related_name="detalles_de_movimiento"
+    )
+    cantidad = models.FloatField()
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.producto.nombre} x {self.cantidad}"
+
+    @property
+    def unidad(self):
+        return self.producto.unidad
+
+
+class Preventa(models.Model):
+    id = models.AutoField(primary_key=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+    nombre = models.TextField(blank=True, null=True)
+    calle = models.TextField(blank=True, null=True)
+    localidad = models.TextField(blank=True, null=True)
+    user = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="preventas"
+    )
+    observaciones = models.TextField(blank=True, null=True)
+    movimiento = models.OneToOneField(
+        MovimientoDeStock,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="preventa_origen"
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=[
+            ("PENDIENTE", "Pendiente"),
+            ("CONFIRMADA", "Confirmada"),
+            ("CANCELADA", "Cancelada"),
+        ],
+        default="PENDIENTE"
+    )
+
+    def __str__(self):
+        return f"Preventa #{self.id} - {self.nombre} ({self.estado})"
+
+    class Meta:
+        ordering = ["-fecha"]
+        verbose_name = "Preventa"
+        verbose_name_plural = "Preventas"
+
+
+class PreventaDetalle(models.Model):
+    preventa = models.ForeignKey(
+        Preventa,
+        on_delete=models.CASCADE,
+        related_name="detalles"
+    )
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.PROTECT,
+        related_name="detalles_preventa"
+    )
+    cantidad = models.FloatField()
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        self.subtotal = self.cantidad * self.precio_unitario
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.producto.nombre} x {self.cantidad}"
 
