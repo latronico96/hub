@@ -55,6 +55,8 @@ class ProductoSerializer(serializers.ModelSerializer[Producto]):
             "can_be_deleted",
             "stock",
             "stock_minimo",
+            "peso",
+            "codigo",
         ]
         read_only_fields = ["id"]
 

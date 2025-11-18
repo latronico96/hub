@@ -2,7 +2,7 @@ from typing import TypedDict
 
 from django.core.cache import cache
 
-from recetario.models import Producto, Receta, Unidad
+from recetario.models import MovimientoDeStock, Producto, Receta, Unidad
 from users.models import User
 
 
@@ -10,6 +10,7 @@ class UserTotals(TypedDict):
     unidades: int
     productos: int
     recetas: int
+    mv_stock: int
 
 
 class UserTotalsCache:
@@ -45,9 +46,10 @@ class UserTotalsCache:
                 "unidades": Unidad.objects.filter(user=user).count(),
                 "productos": Producto.objects.filter(user=user).count(),
                 "recetas": Receta.objects.filter(user=user).count(),
+                "mv_stock": MovimientoDeStock.objects.filter(user=user).count(),
             }
         except User.DoesNotExist:
-            return {"unidades": 0, "productos": 0, "recetas": 0}
+            return {"unidades": 0, "productos": 0, "recetas": 0, "mv_stock": 0}
 
     def _update_users_list(self, user_id: int) -> None:
         user_ids = cache.get(self.all_users_key, set())

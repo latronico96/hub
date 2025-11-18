@@ -6,7 +6,7 @@ from django.dispatch import receiver
 from hub.tasks import enviar_email_de_bienvenida
 from users.models import User
 
-from .models import Producto, Receta, Unidad
+from .models import MovimientoDeStock, Producto, Receta, Unidad
 from .permission_manager import PermissionManager
 from .user_totals_cache import UserTotalsCache
 
@@ -91,6 +91,26 @@ def handle_receta_creation(
 def handle_receta_deletion(
     sender: Type[Receta],  # pylint: disable=unused-argument
     instance: Receta,
+    **kwargs: Any,
+) -> None:
+    UserTotalsCache().invalidate(instance.user.id)
+
+@receiver(post_save, sender=MovimientoDeStock)
+def handle_movimiento_de_stock_creation(
+    sender: Type[MovimientoDeStock],  # pylint: disable=unused-argument
+    instance: MovimientoDeStock,
+    created: bool,
+    **kwargs: Any,
+) -> None:
+    print("corrio el signal de movimiento de stock  ")
+    if created:
+        print("invalidando cache de usuario por creacion de mv stock")
+        UserTotalsCache().invalidate(instance.user.id)
+
+@receiver(post_delete, sender=MovimientoDeStock)
+def handle_movimiento_de_stock_deletion(
+    sender: Type[MovimientoDeStock],  # pylint: disable=unused-argument
+    instance: MovimientoDeStock,
     **kwargs: Any,
 ) -> None:
     UserTotalsCache().invalidate(instance.user.id)

@@ -137,6 +137,28 @@
       border-top: 1px solid #000;
       margin-bottom: 5px;
     }
+
+    .tabla-total {
+      margin-top: 15px;
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .tabla-total th {
+      text-align: right;
+      padding: 6px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .tabla-total td {
+      text-align: right;
+      padding: 6px;
+      border-top: 2px solid #444;
+      font-weight: bold;
+    }
+
   </style>
 </head>
 <body>
@@ -174,27 +196,27 @@
         <th>CÓDIGO</th>
         <th>TIRAS</th>
         <th>KG</th>
-        <th>$/Kg</th>
+        <th>$</th>
         <th>TOTAL</th>
       </tr>
     </thead>
     <tbody>
       {% for item in remito.detalles.all %}
       <tr>
-        <td>{{ item.producto }}</td>
+        <td>{{item.producto.codigo}} {{ item.producto }}</td>
         <td>{{ item.cantidad }}</td>
-        <td>{{ item.kg|default:"" }}</td>
-        <td>{{ item.precio_unitario|default:"" }}</td>
-        <td>{{ item.total|default:"" }}</td>
-      </tr>
-      {% endfor %}
-
-      {% for i in "1234567890123456789012" %}
-      <tr class="espacio">
-        <td></td><td></td><td></td><td></td><td></td>
+        <td>{{ item.producto.peso|default:"" }}</td>
+        <td>{{ item.producto.precio|default:"" }}</td>
+        <td>{{ item.total }}</td>
       </tr>
       {% endfor %}
     </tbody>
+  </table>
+  <table class="tabla-total">
+    <tr>
+      <th>Total General</th>
+      <td>$ {{ remito.total_general|floatformat:2 }}</td>
+    </tr>
   </table>
 </body>
 </html>

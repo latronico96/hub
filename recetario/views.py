@@ -12,6 +12,7 @@ from django.db.models import (
     Value,
     Max,
     TextField,
+    DecimalField,
 )
 from django.db.models.functions import Round, Coalesce, Concat, Cast
 from django.forms import CharField, IntegerField
@@ -352,6 +353,11 @@ class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
         id = self.request.query_params.get("id", None)
 
         remito = MovimientoDeStock.objects.all().get(pk=id)
+        total_calculado = remito.detalles.aggregate(
+            total_general=Sum(F('cantidad') * F('producto__precio'),
+            output_field=DecimalField(max_digits=10, decimal_places=2))
+        )
+        remito.total_general = total_calculado['total_general'] or 0.00
 
         html_string = render_to_string(
             "remito.html",

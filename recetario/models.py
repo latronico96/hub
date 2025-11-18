@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import List, TypedDict
 
 from django.contrib.auth.models import Permission
@@ -61,6 +62,8 @@ class Producto(models.Model):
     precio = models.FloatField()
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="productos")
     stock_minimo = models.FloatField(default=0)
+    peso = models.DecimalField(max_digits=4, decimal_places=3, default=0)
+    codigo = models.CharField(max_length=10, unique=True, default="")
 
     def __str__(self) -> str:
         return str(self.nombre)
@@ -165,6 +168,10 @@ class MovimientoDetalle(models.Model):
     @property
     def unidad(self):
         return self.producto.unidad
+    
+    @property
+    def total(self) -> float:
+        return (Decimal(self.cantidad) * Decimal(self.producto.precio)).quantize(Decimal("0.00"))
 
 
 class Preventa(models.Model):
