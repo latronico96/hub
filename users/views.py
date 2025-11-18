@@ -87,7 +87,17 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         }
         token = jwt.encode(payload, "secret", algorithm="HS256")
 
-        return Response({"token": token})
+        response = Response({"token": token})
+        response.set_cookie(
+            key="jwt_token",
+            value=token,
+            max_age=60*60*24*7,   # 7 días
+            httponly=True,        # NO accesible por JS
+            secure=True,          # obligatorio en Vercel
+            samesite="None",      # obligatorio cross-site
+        )
+
+        return response
 
     @action(
         detail=False,
@@ -135,7 +145,17 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         }
         token = jwt.encode(payload, "secret", algorithm="HS256")
 
-        return Response({"token": token})
+        response = Response({"token": token})
+        response.set_cookie(
+            key="jwt_token",
+            value=token,
+            max_age=60*60*24*7,   # 7 días
+            httponly=True,        # NO accesible por JS
+            secure=True,          # obligatorio en Vercel
+            samesite="None",      # obligatorio cross-site
+        )
+
+        return response
 
     @action(
         detail=False,
