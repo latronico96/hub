@@ -55,6 +55,7 @@ ALLOWED_HOSTS = [
     "recetascocol.com.ar",
     "www.recetascocol.com.ar",
     "kubernetes.docker.internal",
+    "frontend-next-sand.vercel.app",
 ]
 
 # Application definition
@@ -89,6 +90,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://kubernetes.docker.internal",
     "http://localhost:3000",
     "http://localhost:8080",
+    "https://frontend-next-sand.vercel.app",
+    "http://frontend-next-sand.vercel.app",
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https:\/\/[a-z0-9\-]+\.ngrok-free\.app$",
@@ -110,10 +113,15 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 CSRF_TRUSTED_ORIGINS = [
     r"https://.*\.ngrok-free\.app",
     "http://localhost:3000",
+    "https://frontend-next-sand.vercel.app",
 ]
 
 print("templates")
