@@ -334,11 +334,6 @@ class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
             response["Content-Disposition"] = 'inline; filename="productos.pdf"'
         else:
             response["Content-Disposition"] = 'attachment; filename="productos.pdf"'
-
-        response["X-Frame-Options"] = "ALLOWALL"
-        response["Content-Security-Policy"] = (
-            "frame-ancestors 'self' http://localhost:3000"
-        )
         response["Cross-Origin-Opener-Policy"] = "unsafe-none"
 
         return response
@@ -372,10 +367,6 @@ class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
         else:
             response["Content-Disposition"] = 'attachment; filename="productos.pdf"'
 
-        response["X-Frame-Options"] = "ALLOWALL"
-        response["Content-Security-Policy"] = (
-            "frame-ancestors 'self' http://localhost:3000"
-        )
         response["Cross-Origin-Opener-Policy"] = "unsafe-none"
 
         return response
@@ -428,10 +419,6 @@ class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
         else:
             response["Content-Disposition"] = 'attachment; filename="productos.pdf"'
 
-        response["X-Frame-Options"] = "ALLOWALL"
-        response["Content-Security-Policy"] = (
-            "frame-ancestors 'self' http://localhost:3000"
-        )
         response["Cross-Origin-Opener-Policy"] = "unsafe-none"
 
         return response

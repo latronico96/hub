@@ -322,3 +322,15 @@ CONTENT_SECURITY_POLICY = {
         ],
     }
 }
+
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "frame-ancestors": [
+            "'self'",
+            "http://localhost:3000",
+            "https://frontend-next-sand.vercel.app",
+            "https://recetascocol.com.ar",
+            "https://www.recetascocol.com.ar",
+        ]
+    }
+}
