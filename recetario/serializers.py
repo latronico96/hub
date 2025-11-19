@@ -205,7 +205,14 @@ class MovimientoDetalleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MovimientoDetalle
-        fields = ["id", "productoId", "nombre_producto", "cantidad", "precio_unitario"]
+        fields = [
+            "id",
+            "productoId",
+            "nombre_producto",
+            "cantidad",
+            "precio_unitario",
+            "total",
+        ]
         read_only_fields = ["id", "nombre_producto"]
 
 
