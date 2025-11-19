@@ -45,3 +45,4 @@ et-xmlfile==2.0.0
 cffi==2.0.0
 pycparser==2.23
 webencodings==0.5.1
+django-csp==4.0

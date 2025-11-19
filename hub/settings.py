@@ -309,3 +309,22 @@ MERCADOPAGO["access_token"] = (
 )
 
 print(f"[SETTINGS] ENV is_testing: {is_testing}")
+
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "frame-ancestors": [
+            "'self'",
+            "http://localhost:3000",
+            "https://frontend-next-sand.vercel.app",
+            "https://recetascocol.com.ar",
+            "https://www.recetascocol.com.ar",
+        ],
+    }
+}
+
+INSTALLED_APPS += ["csp"]
+
+MIDDLEWARE.insert(
+    MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,
+    "csp.middleware.CSPMiddleware"
+)
