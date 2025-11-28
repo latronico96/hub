@@ -13,6 +13,8 @@ from .models import (
     Receta,
     Unidad,
     MovimientoDeStock,
+    CostoLaboral,
+    ConfiguracionNegocio,
 )
 
 
@@ -112,6 +114,8 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
             "rinde",
             "precio_unidad",
             "precio",
+            "tiempo_produccion_minutos",
+            "costo_total_estimado",
         ]
         read_only_fields = ["id"]
 
@@ -140,6 +144,14 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
             "precio_unidad", instance.precio_unidad
         )
         instance.precio = validated_data.get("precio", instance.precio)
+        instance.tiempo_produccion_minutos = validated_data.get(
+            "tiempo_produccion_minutos",
+            instance.tiempo_produccion_minutos
+        )
+        instance.costo_total_estimado = validated_data.get(
+            "costo_total_estimado",
+            instance.costo_total_estimado
+        )
         instance.save()
 
         ingredientes_ids_nuevos = [
@@ -296,3 +308,19 @@ class PreventaSerializer(serializers.ModelSerializer):
         for detalle_data in detalles_data:
             PreventaDetalle.objects.create(preventa=preventa, **detalle_data)
         return preventa
+
+
+class CostoLaboralSerializer(serializers.Serializer):
+    class Meta:
+        model = CostoLaboral
+        fields = ["costo_hora"]
+
+
+class ConfiguracionNegocioSerializer(serializers.Serializer):
+    class Meta:
+        model = ConfiguracionNegocio
+        fields = [
+            "nombre_negocio",
+            "tasa_costo_indirecto_por_hora",
+            "porcentaje_margen_beneficio",
+        ]

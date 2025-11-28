@@ -87,6 +87,43 @@ class Receta(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="recetas")
     precio_unidad = models.FloatField()
     precio = models.FloatField()
+    tiempo_produccion_minutos = models.PositiveIntegerField(
+        default=0,
+        help_text=(
+            "Tiempo total en minutos para elaborar la receta "
+            "(preparación + cocción/ensamblaje)."
+        )
+    )
+
+    @property
+    def costo_total_estimado(self) -> float:
+        """Calcula costo total: Materiales + Mano de Obra + Indirectos."""
+        # --- COSTO MATERIALES ---
+        costo_materiales = sum(
+            ingrediente.cantidad * ingrediente.producto.precio
+            for ingrediente in self.ingredientes.all()
+        )
+
+        # --- EVITAR ERRORES SI FALTA CONFIGURACIÓN ---
+        try:
+            config = self.user.configuracion.get()
+            tasa_indirecto = config.tasa_costo_indirecto_por_hora
+        except ConfiguracionNegocio.DoesNotExist:
+            tasa_indirecto = 0
+
+        try:
+            mano_de_obra = self.user.costos_laborales.get()
+            costo_mano_obra_hora = mano_de_obra.costo_por_hora
+        except CostoLaboral.DoesNotExist:
+            costo_mano_obra_hora = 0
+
+        # --- CALCULOS POR TIEMPO ---
+        horas = self.tiempo_produccion_minutos / 60
+
+        costo_mano_obra = horas * costo_mano_obra_hora
+        costo_indirecto = horas * tasa_indirecto
+
+        return float(costo_materiales + costo_mano_obra + costo_indirecto)
 
     def __str__(self) -> str:
         return str(self.nombre)
@@ -120,6 +157,53 @@ class Ingrediente(models.Model):
     class Meta:
         verbose_name = "Ingrediente"
         verbose_name_plural = "Ingredientes"
+
+
+class ConfiguracionNegocio(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="configuracion"
+    )
+    nombre_negocio = models.CharField(max_length=200)
+    tasa_costo_indirecto_por_hora = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Valor en moneda local por hora operativa (costos indirectos)."
+    )
+    porcentaje_margen_beneficio = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        help_text="Margen (%) que se aplicará para sugerir precio de venta."
+    )
+
+    class Meta:
+        verbose_name = "Configuración de Negocio"
+        verbose_name_plural = "Configuraciones de Negocio"
+
+    def __str__(self) -> str:
+        return f"Config de {self.user.username}"
+
+
+class CostoLaboral(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="costos_laborales"
+    )
+    costo_por_hora = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Costo de mano de obra por hora."
+    )
+
+    class Meta:
+        verbose_name = "Costo Laboral"
+        verbose_name_plural = "Costos Laborales"
+
+    def __str__(self) -> str:
+        return f"Costo Laboral de {self.user.username}"
 
 
 class MovimientoDeStock(models.Model):

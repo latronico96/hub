@@ -107,6 +107,10 @@ class UserViewSet(viewsets.ModelViewSet[User]):
     )
     def register(self, request: Request) -> Response:
         name = request.data.get("name")
+        nombre_negocio = request.data.get("nombre_negocio")
+        tasa_costo_indirecto_por_hora = request.data.get("tasa_costo_indirecto_por_hora")
+        porcentaje_margen_beneficio = request.data.get("porcentaje_margen_beneficio")
+
         email = request.data.get("email")
         password = request.data.get("password")
         print(name, email, password)

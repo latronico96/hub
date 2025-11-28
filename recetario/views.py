@@ -1,5 +1,6 @@
 from typing import Type
 
+from django.core.exceptions import ValidationError
 from django.db.models import (
     Case,
     Exists,
@@ -46,6 +47,8 @@ from .models import (
     Receta,
     Unidad,
     MovimientoDeStock,
+    CostoLaboral,
+    ConfiguracionNegocio,
 )
 from .serializers import (
     PreventaSerializer,
@@ -54,6 +57,8 @@ from .serializers import (
     RecetaSerializer,
     UnidadSerializer,
     MovimientoDeStockSerializer,
+    CostoLaboralSerializer,
+    ConfiguracionNegocioSerializer,
 )
 from .user_totals_cache import UserTotalsCache
 
@@ -460,3 +465,63 @@ class PreventaViewSet(ModelViewSet[Preventa]):
         preventa.save()
 
         return Response({"detail": "Preventa confirmada y movimiento generado."})
+
+
+class CostoLaboralViewSet(ModelViewSet[CostoLaboral]):
+    queryset = CostoLaboral.objects.all()
+    serializer_class = CostoLaboralSerializer
+    user_service = UserService()
+    permission_classes: list[Type[BasePermission]] = [IsAuthenticated]
+
+    def get_queryset(self) -> QuerySet[MovimientoDeStock]:
+        qs = super().get_queryset().order_by("-fecha")
+        
+        if not self.user_service.is_admin_and_authenticated(self.request):
+            qs = qs.filter(
+                user=self.user_service.get_authenticated_user(self.request)
+            )
+        return qs
+
+    def perform_create(self, serializer: BaseSerializer[MovimientoDeStock]) -> None:
+        serializer.save(user=self.request.user)
+
+    def destroy(self, _request: Request, *args: object, **kwargs: object) -> Response:
+        instance = self.get_object()
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ConfiguracionNegocioViewSet(ModelViewSet[ConfiguracionNegocio]):
+    queryset = ConfiguracionNegocio.objects.all()
+    serializer_class = ConfiguracionNegocioSerializer
+    user_service = UserService()
+    permission_classes: list[Type[BasePermission]] = [IsAuthenticated]
+
+    def get_queryset(self) -> QuerySet[ConfiguracionNegocio]:
+        qs = super().get_queryset().order_by("-id")
+        
+        if not self.user_service.is_admin_and_authenticated(self.request):
+            qs = qs.filter(
+                user=self.user_service.get_authenticated_user(self.request)
+            )
+        return qs
+
+    def perform_create(self, serializer: BaseSerializer[ConfiguracionNegocio]) -> None:
+        """
+        Se asegura de que cada usuario tenga SOLO UNA configuración.
+        Si existe, se retorna error 400.
+        """
+        user_loged = self.user_service.get_authenticated_user(self.request)
+        if ConfiguracionNegocio.objects.filter(user=user_loged).exists():  # type: ignore[attr-defined]
+            raise ValidationError(
+                {"detail": "Ya existe una configuración para este usuario."}
+            )
+
+        serializer.save(user=self.request.user)
+
+    def destroy(self, _request: Request, *args: object, **kwargs: object) -> Response:
+        instance = self.get_object()
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
