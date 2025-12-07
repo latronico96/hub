@@ -14,6 +14,8 @@ import os
 import sys
 from pathlib import Path
 
+from corsheaders.defaults import default_headers
+
 # Evaluate if the application is running in a test environment
 is_testing: bool = (
     "test" in sys.argv
@@ -45,18 +47,32 @@ SECRET_KEY = "django-insecure-mfqy7^=&$q%k!2ec_98w7quqk!2yy!wbb6z^h1th0c02io*9n$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
+env_allowed = os.getenv("ALLOWED_HOSTS", "")
+env_allowed_list = [h.strip() for h in env_allowed.split(",") if h.strip()]
+
+default_hosts = [
     "6ceefd73edf6.ngrok-free.app",
     "127.0.0.1",
     "localhost",
-    os.getenv("DJANGO_STATIC_FRONTEND_URL", "")
-    .replace("http://", "")
-    .replace("https://", ""),
     "recetascocol.com.ar",
     "www.recetascocol.com.ar",
     "kubernetes.docker.internal",
     "frontend-next-sand.vercel.app",
 ]
+
+static_frontend = (
+    os.getenv("DJANGO_STATIC_FRONTEND_URL", "")
+    .replace("http://", "")
+    .replace("https://", "")
+    .strip()
+)
+
+ALLOWED_HOSTS = list(
+    { *default_hosts, *env_allowed_list, static_frontend }
+)
+
+# Limpia valores vacíos
+ALLOWED_HOSTS = [h for h in ALLOWED_HOSTS if h]
 
 # Application definition
 INSTALLED_APPS = [
@@ -86,7 +102,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "hub.urls"
-CORS_ALLOWED_ORIGINS = [ 
+CORS_ALLOWED_ORIGINS = [
     STATIC_FRONTEND_URL,
     "http://kubernetes.docker.internal",
     "http://localhost:3000",
@@ -101,8 +117,6 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 
 print(CORS_ALLOWED_ORIGINS)
 print(ALLOWED_HOSTS)
-
-from corsheaders.defaults import default_headers
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "accept-encoding",
