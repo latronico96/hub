@@ -333,7 +333,7 @@ CONTENT_SECURITY_POLICY = {
             "https://frontend-next-sand.vercel.app",
             "https://recetascocol.com.ar",
             "https://www.recetascocol.com.ar",
-            os.getenv("DJANGO_STATIC_FRONTEND_URL", "")
+            os.getenv("DJANGO_STATIC_FRONTEND_URL", ""),
         ],
     }
 }
@@ -346,6 +346,7 @@ CONTENT_SECURITY_POLICY = {
             "https://frontend-next-sand.vercel.app",
             "https://recetascocol.com.ar",
             "https://www.recetascocol.com.ar",
+            os.getenv("DJANGO_STATIC_FRONTEND_URL", ""),
         ]
     }
 }
