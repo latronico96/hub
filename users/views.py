@@ -1,12 +1,19 @@
+import os
 import datetime
 import logging
 from typing import Any
 
 import jwt
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse, JsonResponse
+from django.http import (
+    HttpResponse,
+    JsonResponse,
+    FileResponse,
+)
+from django.views import View
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed
@@ -382,3 +389,53 @@ class PermissionViewSet(ReadOnlyModelViewSet[Permission]):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
     permission_classes = [IsAuthenticated]
+
+
+class ExportDatabaseView(View):
+    def get(self, request):
+        token = request.headers.get("X-DB-TOKEN")
+
+        if token != os.getenv("DB_ADMIN_TOKEN"):
+            return HttpResponse("Unauthorized", status=401)
+
+        db_path = settings.DATABASES["default"]["NAME"]
+
+        if not os.path.exists(db_path):
+            return JsonResponse({"error": "Database file not found"}, status=404)
+
+        """ 🔽 Descargar DB
+        curl -H "X-DB-TOKEN: $DB_ADMIN_TOKEN" \
+            -o db.sqlite3 \
+            https://tu-dominio.com/export-db/
+        🔼 Subir DB"""
+        return FileResponse(
+            open(db_path, "rb"),
+            as_attachment=True,
+            filename="db.sqlite3"
+        )
+
+
+class ImportDatabaseView(View):
+    def post(self, request):
+        token = request.headers.get("X-DB-TOKEN")
+
+        if token != os.getenv("DB_ADMIN_TOKEN"):
+            return HttpResponse("Unauthorized", status=401)
+
+        if "file" not in request.FILES:
+            return JsonResponse({"error": "Missing file"}, status=400)
+
+        uploaded = request.FILES["file"]
+        db_path = settings.DATABASES["default"]["NAME"]
+
+        # Guardar nueva DB
+        with open(db_path, "wb") as dest:
+            for chunk in uploaded.chunks():
+                dest.write(chunk)
+
+        #curl -X POST \
+        #    -H "X-DB-TOKEN: $DB_ADMIN_TOKEN" \
+        #    -F "file=@db.sqlite3" \
+        #    https://tu-dominio.com/import-db/ 
+
+        return JsonResponse({"status": "ok", "message": "Database replaced"})
