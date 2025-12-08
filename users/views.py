@@ -10,13 +10,16 @@ from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 from django.http import (
     HttpResponse,
+    HttpResponseForbidden,
     JsonResponse,
     FileResponse,
 )
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import (
     AllowAny,
     IsAdminUser,
@@ -415,27 +418,36 @@ class ExportDatabaseView(View):
         )
 
 
-class ImportDatabaseView(View):
+class ImportDatabaseView(APIView):
+    parser_classes = [MultiPartParser]
+    authentication_classes = []  # sin JWT
+    permission_classes = []
+
+    @csrf_exempt
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
     def post(self, request):
         token = request.headers.get("X-DB-TOKEN")
 
-        if token != os.getenv("DB_ADMIN_TOKEN"):
-            return HttpResponse("Unauthorized", status=401)
+        if token != settings.DB_ADMIN_TOKEN:
+            return HttpResponseForbidden("Invalid token")
 
-        if "file" not in request.FILES:
-            return JsonResponse({"error": "Missing file"}, status=400)
+        file = request.FILES.get("file")
+        if not file:
+            return HttpResponseForbidden("File missing")
 
-        uploaded = request.FILES["file"]
-        db_path = settings.DATABASES["default"]["NAME"]
+        db_path = settings.BASE_DIR / "db.sqlite3"
 
-        # Guardar nueva DB
-        with open(db_path, "wb") as dest:
-            for chunk in uploaded.chunks():
-                dest.write(chunk)
-
-        #curl -X POST \
+        with open(db_path, "wb") as f:
+            for chunk in file.chunks():
+                f.write(chunk)
+        # curl -X POST \
         #    -H "X-DB-TOKEN: $DB_ADMIN_TOKEN" \
         #    -F "file=@db.sqlite3" \
         #    https://tu-dominio.com/import-db/ 
 
-        return JsonResponse({"status": "ok", "message": "Database replaced"})
+        return FileResponse(
+            open(db_path, "rb"),
+            content_type="application/octet-stream"
+        )
