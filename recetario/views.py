@@ -14,7 +14,6 @@ from django.db.models import (
     TextField,
 )
 from django.db.models.functions import Round, Coalesce, Concat, Cast
-from django.forms import CharField, IntegerField
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from openpyxl import Workbook
@@ -230,7 +229,7 @@ class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
 
     def get_queryset(self) -> QuerySet[MovimientoDeStock]:
         qs = super().get_queryset().order_by("-fecha")
-        
+
         if not self.user_service.is_admin_and_authenticated(self.request):
             qs = qs.filter(
                 user=self.user_service.get_authenticated_user(self.request)
@@ -310,9 +309,11 @@ class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
                 ultima_fecha=Max("detalles_de_movimiento__movimiento__fecha"),
                 estado=Case(
                     When(stock_actual__lte=0, then=Value("Sin Stock")),
-                    When(stock_actual__lte=F("stock_minimo"),
+                    When(
+                        stock_actual__lte=F("stock_minimo"),
                         stock_actual__gt=0,
-                        then=Value("Bajo Stock")),
+                        then=Value("Bajo Stock")
+                    ),
                     default=Value("Con Stock")
                 ),
                 cod_Nombre=Concat(
@@ -349,9 +350,9 @@ class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
         permission_classes=[IsAuthenticated],
     )
     def exportar_pdf2(self, request: Request) -> Response:
-        id = self.request.query_params.get("id", None)
+        remito_id = self.request.query_params.get("id", None)
 
-        remito = MovimientoDeStock.objects.all().get(pk=id)
+        remito = MovimientoDeStock.objects.all().get(pk=remito_id)
 
         html_string = render_to_string(
             "remito.html",
@@ -373,13 +374,14 @@ class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
         response["Cross-Origin-Opener-Policy"] = "unsafe-none"
 
         return response
+
     @action(
         detail=False,
         methods=["get"],
         url_path="pdf_acumulados",
         permission_classes=[IsAuthenticated],
     )
-    def exportar_pdf_productos_acumulados(self, request: Request) -> Response:  
+    def exportar_pdf_productos_acumulados(self, request: Request) -> Response:
         productos = (
             Producto.objects
             .annotate(

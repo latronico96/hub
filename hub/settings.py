@@ -84,7 +84,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "hub.urls"
-CORS_ALLOWED_ORIGINS = [ 
+CORS_ALLOWED_ORIGINS = [
     STATIC_FRONTEND_URL,
     "http://kubernetes.docker.internal",
     "http://localhost:3000",
@@ -136,24 +136,24 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "hub.wsgi.application"
-DATABASES_PATH: str = os.getenv("DJANGO_DATABASES_PATH") or str(BASE_DIR / "db.sqlite3")
+DATABASES_PATH: str = os.getenv("DJANGO_DATABASES_PATH") or str(BASE_DIR / "base.sqlite3")
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": BASE_DIR / "base.sqlite3",
     }
 }
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.mysql",
-#         "NAME": "hub",
-#         "USER": "root",
-#         "PASSWORD": "root",
-#         "HOST": "localhost",
-#         "PORT": "3306",
-#     }
-# }
-
+""" DATABASES = {
+     "default": {
+         "ENGINE": "django.db.backends.mysql",
+         "NAME": "hub",
+         "USER": "root",
+         "PASSWORD": "root",
+         "HOST": "localhost",
+         "PORT": "3306",
+     }
+ }
+ """
 
 print(DATABASES)
 
