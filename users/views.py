@@ -1,15 +1,25 @@
+import os
 import datetime
 import logging
 from typing import Any
 
 import jwt
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse, JsonResponse
+from django.http import (
+    HttpResponse,
+    HttpResponseForbidden,
+    JsonResponse,
+    FileResponse,
+)
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import (
     AllowAny,
     IsAdminUser,
@@ -87,7 +97,17 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         }
         token = jwt.encode(payload, "secret", algorithm="HS256")
 
-        return Response({"token": token})
+        response = Response({"token": token})
+        response.set_cookie(
+            key="jwt_token",
+            value=token,
+            max_age=60*60*24*7,   # 7 días
+            httponly=True,        # NO accesible por JS
+            secure=True,          # obligatorio en Vercel
+            samesite="None",      # obligatorio cross-site
+        )
+
+        return response
 
     @action(
         detail=False,
@@ -135,7 +155,17 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         }
         token = jwt.encode(payload, "secret", algorithm="HS256")
 
-        return Response({"token": token})
+        response = Response({"token": token})
+        response.set_cookie(
+            key="jwt_token",
+            value=token,
+            max_age=60*60*24*7,   # 7 días
+            httponly=True,        # NO accesible por JS
+            secure=True,          # obligatorio en Vercel
+            samesite="None",      # obligatorio cross-site
+        )
+
+        return response
 
     @action(
         detail=False,
@@ -362,3 +392,62 @@ class PermissionViewSet(ReadOnlyModelViewSet[Permission]):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
     permission_classes = [IsAuthenticated]
+
+
+class ExportDatabaseView(View):
+    def get(self, request):
+        token = request.headers.get("X-DB-TOKEN")
+
+        if token != os.getenv("DB_ADMIN_TOKEN"):
+            return HttpResponse("Unauthorized", status=401)
+
+        db_path = settings.DATABASES["default"]["NAME"]
+
+        if not os.path.exists(db_path):
+            return JsonResponse({"error": "Database file not found"}, status=404)
+
+        """ 🔽 Descargar DB
+        curl -H "X-DB-TOKEN: $DB_ADMIN_TOKEN" \
+            -o db.sqlite3 \
+            https://tu-dominio.com/export-db/
+        🔼 Subir DB"""
+        return FileResponse(
+            open(db_path, "rb"),
+            as_attachment=True,
+            filename="db.sqlite3"
+        )
+
+
+class ImportDatabaseView(APIView):
+    parser_classes = [MultiPartParser]
+    authentication_classes = []  # sin JWT
+    permission_classes = []
+
+    @csrf_exempt
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request):
+        token = request.headers.get("X-DB-TOKEN")
+
+        if token != os.getenv("DB_ADMIN_TOKEN"):
+            return HttpResponseForbidden("Invalid token")
+
+        file = request.FILES.get("file")
+        if not file:
+            return HttpResponseForbidden("File missing")
+
+        db_path = settings.BASE_DIR / "db.sqlite3"
+
+        with open(db_path, "wb") as f:
+            for chunk in file.chunks():
+                f.write(chunk)
+        # curl -X POST \
+        #    -H "X-DB-TOKEN: $DB_ADMIN_TOKEN" \
+        #    -F "file=@db.sqlite3" \
+        #    https://tu-dominio.com/import-db/ 
+
+        return FileResponse(
+            open(db_path, "rb"),
+            content_type="application/octet-stream"
+        )
