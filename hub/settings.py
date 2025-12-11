@@ -171,6 +171,7 @@ DATABASES = {
 
 
 print(DATABASES)
+print("Token: ",os.getenv("DB_ADMIN_TOKEN"))
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

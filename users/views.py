@@ -430,8 +430,11 @@ class ImportDatabaseView(APIView):
     def post(self, request):
         token = request.headers.get("X-DB-TOKEN")
 
+        if os.getenv("DB_ADMIN_TOKEN") is None:
+            return HttpResponseForbidden("not environment")
+
         if token != os.getenv("DB_ADMIN_TOKEN"):
-            return HttpResponseForbidden("Invalid token")
+            return HttpResponseForbidden("Invalid token desde requerst")
 
         file = request.FILES.get("file")
         if not file:
