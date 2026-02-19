@@ -33,39 +33,49 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from weasyprint import HTML
+from typing import Type
+
+from django.db.models import (
+    Case, Exists, F, FloatField, OuterRef, QuerySet, Sum, When, Value,
+    Max, TextField, DecimalField
+)
+from django.db.models.functions import Round, Coalesce, Concat, Cast
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from openpyxl import Workbook
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import BasePermission, DjangoModelPermissions, IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+from weasyprint import HTML
 
 from recetario.group_concat import GroupConcat
 from users.service import UserService
 
 from django.core.cache import cache
-from math import ceil
-
 
 from .models import (
-    Ingrediente,
-    MovimientoDetalle,
-    Preventa,
-    Producto,
-    Receta,
-    Unidad,
-    MovimientoDeStock,
+    Ingrediente, MovimientoDetalle, Preventa, Producto,
+    Receta, Unidad, MovimientoDeStock
 )
 from .serializers import (
-    PreventaSerializer,
-    ProductoSerializer,
-    RecetaGrillaSerializer,
-    RecetaSerializer,
-    UnidadSerializer,
-    MovimientoDeStockSerializer,
+    PreventaSerializer, ProductoSerializer, RecetaGrillaSerializer,
+    RecetaSerializer, UnidadSerializer, MovimientoDeStockSerializer
 )
 from .user_totals_cache import UserTotalsCache
 
-# Cache TTL
-CACHE_TTL_PRODUCTOS = 60 * 10  # 10 minutos
-CACHE_TTL_RECETAS = 60 * 5     # 5 minutos
+
+# ───── CACHE TTL ─────
+CACHE_TTL_PRODUCTOS = 60 * 10  # 10 min
+CACHE_TTL_RECETAS = 60 * 5     # 5 min
 CACHE_TTL_UNIDADES = 60 * 60 * 2  # 2 horas
 
-# Keys por usuario
+# ───── CACHE KEYS ─────
 def productos_cache_key(user_id: int, filtro_stock: str | None) -> str:
     return f"productos:list:u{user_id}:f{filtro_stock or 'all'}"
 
@@ -75,7 +85,7 @@ def recetas_cache_key(user_id: int) -> str:
 def unidades_cache_key(user_id: int) -> str:
     return f"unidades:list:u{user_id}"
 
-# Invalidaciones
+# ───── CACHE INVALIDATIONS ─────
 def invalidate_productos_cache(user_id: int) -> None:
     for f in ("all", "sin_stock", "bajo_stock", "con_stock"):
         cache.delete(f"productos:list:u{user_id}:f{f}")
@@ -86,30 +96,35 @@ def invalidate_recetas_cache(user_id: int) -> None:
 def invalidate_unidades_cache(user_id: int) -> None:
     cache.delete(f"unidades:list:u{user_id}")
 
-# pylint: disable=too-many-ancestors
+
+# ───── UNIDAD ─────
 class UnidadViewSet(ModelViewSet[Unidad]):
     queryset = Unidad.objects.all()
     serializer_class = UnidadSerializer
     user_service = UserService()
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
+    pagination_class = PageNumberPagination
 
     def get_queryset(self) -> QuerySet[Unidad]:
         user = self.request.user
 
-        # Admin → no cache
         if self.user_service.is_admin_and_authenticated(self.request):
-            qs = Unidad.objects.all().order_by("nombre")
-        else:
-            cache_key = unidades_cache_key(user.id)
-            qs = cache.get(cache_key)
-            if qs is None:
-                qs = Unidad.objects.filter(user=user).order_by("nombre").annotate(
-                    has_product=Exists(Producto.objects.filter(unidad=OuterRef("pk"))),
-                    has_ingrediente=Exists(Ingrediente.objects.filter(unidad=OuterRef("pk"))),
-                )
-                cache.set(cache_key, list(qs), CACHE_TTL_UNIDADES)
+            return Unidad.objects.all().order_by("nombre")
 
-        return qs
+        # cache por usuario
+        cache_key = unidades_cache_key(user.id)
+        unidades_serializadas = cache.get(cache_key)
+
+        if unidades_serializadas is None:
+            qs = Unidad.objects.filter(user=user).order_by("nombre").annotate(
+                has_product=Exists(Producto.objects.filter(unidad=OuterRef("pk"))),
+                has_ingrediente=Exists(Ingrediente.objects.filter(unidad=OuterRef("pk")))
+            )
+            unidades_serializadas = UnidadSerializer(qs, many=True).data
+            cache.set(cache_key, unidades_serializadas, CACHE_TTL_UNIDADES)
+
+        # Retornamos directamente los datos serializados para DRF
+        return unidades_serializadas
 
     def perform_create(self, serializer: BaseSerializer[Unidad]) -> None:
         unidad = serializer.save(user=self.request.user)
@@ -119,27 +134,23 @@ class UnidadViewSet(ModelViewSet[Unidad]):
         unidad = serializer.save()
         invalidate_unidades_cache(unidad.user_id)
 
-    def destroy(self, request: Request, *args: object, **kwargs: object) -> Response:
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
         instance = self.get_object()
-        if (
-            Producto.objects.filter(unidad=instance).exists()
-            or Ingrediente.objects.filter(unidad=instance).exists()
-        ):
-            return Response(
-                {"detail": "La unidad está en uso y no se puede borrar."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        if Producto.objects.filter(unidad=instance).exists() or Ingrediente.objects.filter(unidad=instance).exists():
+            return Response({"detail": "La unidad está en uso y no se puede borrar."}, status=status.HTTP_400_BAD_REQUEST)
         user_id = instance.user_id
         instance.delete()
         invalidate_unidades_cache(user_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-# pylint: disable=too-many-ancestors
+
+# ───── PRODUCTO ─────
 class ProductoViewSet(ModelViewSet[Producto]):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
     user_service = UserService()
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
+    pagination_class = PageNumberPagination
 
     def list(self, request: Request, *args, **kwargs) -> Response:
         user = request.user
@@ -147,61 +158,41 @@ class ProductoViewSet(ModelViewSet[Producto]):
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 12))
 
-        # Admin → sin cache
+        # admin → sin cache
         if self.user_service.is_admin_and_authenticated(request):
             qs = self._build_queryset(request)
             total = qs.count()
             start = (page - 1) * page_size
             end = start + page_size
             serializer = self.get_serializer(qs[start:end], many=True)
-            return Response({
-                "count": total,
-                "page": page,
-                "page_size": page_size,
-                "results": serializer.data,
-            })
+            return Response({"count": total, "page": page, "page_size": page_size, "results": serializer.data})
 
-        # Usuario normal → cache
+        # usuario normal → cache
         cache_key = productos_cache_key(user.id, filtro_stock)
         productos_serializados = cache.get(cache_key)
+
         if productos_serializados is None:
             qs = self._build_queryset(request)
             productos_serializados = ProductoSerializer(qs, many=True).data
             cache.set(cache_key, productos_serializados, CACHE_TTL_PRODUCTOS)
 
+        # paginación manual sobre cache
         total = len(productos_serializados)
         start = (page - 1) * page_size
         end = start + page_size
-
-        return Response({
-            "count": total,
-            "page": page,
-            "page_size": page_size,
-            "results": productos_serializados[start:end],
-        })
+        return Response({"count": total, "page": page, "page_size": page_size, "results": productos_serializados[start:end]})
 
     def _build_queryset(self, request: Request) -> QuerySet[Producto]:
         queryset = Producto.objects.order_by("nombre")
-
         stock_calculation = Sum(
             Case(
-                When(
-                    detalles_de_movimiento__movimiento__tipo='ENTRADA',
-                    then=F('detalles_de_movimiento__cantidad')
-                ),
-                When(
-                    detalles_de_movimiento__movimiento__tipo='SALIDA',
-                    then=-1 * F('detalles_de_movimiento__cantidad')
-                ),
+                When(detalles_de_movimiento__movimiento__tipo='ENTRADA', then=F('detalles_de_movimiento__cantidad')),
+                When(detalles_de_movimiento__movimiento__tipo='SALIDA', then=-1*F('detalles_de_movimiento__cantidad')),
                 output_field=FloatField(),
             )
         )
-
-        queryset = queryset.annotate(
-            stock_actual=Coalesce(stock_calculation, Value(0.0))
-        ).filter(
-            user=self.user_service.get_authenticated_user(request)
-        )
+        queryset = queryset.annotate(stock_actual=Coalesce(stock_calculation, Value(0.0)))
+        queryset = queryset.filter(user=self.user_service.get_authenticated_user(request))
 
         filtro_stock = request.query_params.get("filtro_stock")
         if filtro_stock == "sin_stock":
@@ -211,9 +202,7 @@ class ProductoViewSet(ModelViewSet[Producto]):
         elif filtro_stock == "con_stock":
             queryset = queryset.filter(stock_actual__gt=0)
 
-        return queryset.annotate(
-            has_ingrediente=Exists(Ingrediente.objects.filter(producto=OuterRef("pk")))
-        )
+        return queryset.annotate(has_ingrediente=Exists(Ingrediente.objects.filter(producto=OuterRef("pk"))))
 
     # INVALIDACIONES
     def perform_create(self, serializer: BaseSerializer[Producto]) -> None:
@@ -227,16 +216,14 @@ class ProductoViewSet(ModelViewSet[Producto]):
     def destroy(self, request: Request, *args, **kwargs) -> Response:
         instance = self.get_object()
         if Ingrediente.objects.filter(producto=instance).exists():
-            return Response(
-                {"detail": "El producto está en uso y no se puede borrar."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"detail": "El producto está en uso y no se puede borrar."}, status=status.HTTP_400_BAD_REQUEST)
         user_id = instance.user_id
         instance.delete()
         invalidate_productos_cache(user_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-# pylint: disable=too-many-ancestors
+
+# ───── RECETA ─────
 class RecetaViewSet(ModelViewSet[Receta]):
     pagination_class = PageNumberPagination
     queryset = Receta.objects.all()
@@ -250,48 +237,35 @@ class RecetaViewSet(ModelViewSet[Receta]):
         page_size = int(request.query_params.get("page_size", 12))
         search = request.query_params.get("search", "").strip().lower()
 
-        # Admin → sin cache
+        # admin → sin cache
         if self.user_service.is_admin_and_authenticated(request):
             qs = Receta.objects.all().order_by("nombre")
             if search:
                 qs = qs.filter(nombre__icontains=search)
             total = qs.count()
-            start = (page - 1) * page_size
-            end = start + page_size
+            start = (page-1)*page_size
+            end = start+page_size
             serializer = self.get_serializer(qs[start:end], many=True)
-            return Response({
-                "count": total,
-                "page": page,
-                "page_size": page_size,
-                "results": serializer.data,
-            })
+            return Response({"count": total, "page": page, "page_size": page_size, "results": serializer.data})
 
-        # Usuario normal → cache
+        # usuario normal → cache
         cache_key = recetas_cache_key(user.id)
         recetas_serializadas = cache.get(cache_key)
+
         if recetas_serializadas is None:
             qs = Receta.objects.filter(user=user).order_by("nombre")
-            serializer = RecetaSerializer(qs, many=True)
-            recetas_serializadas = serializer.data
+            recetas_serializadas = RecetaSerializer(qs, many=True).data
             cache.set(cache_key, recetas_serializadas, CACHE_TTL_RECETAS)
 
-        # 🔍 Aplicar búsqueda sobre cache
+        # búsqueda sobre cache
         if search:
-            recetas_serializadas = [
-                r for r in recetas_serializadas if search in r["nombre"].lower()
-            ]
+            recetas_serializadas = [r for r in recetas_serializadas if search in r["nombre"].lower()]
 
-        # Paginación sobre cache
+        # paginación sobre cache
         total = len(recetas_serializadas)
-        start = (page - 1) * page_size
-        end = start + page_size
-
-        return Response({
-            "count": total,
-            "page": page,
-            "page_size": page_size,
-            "results": recetas_serializadas[start:end],
-        })
+        start = (page-1)*page_size
+        end = start+page_size
+        return Response({"count": total, "page": page, "page_size": page_size, "results": recetas_serializadas[start:end]})
 
     def perform_create(self, serializer: BaseSerializer[Receta]) -> None:
         receta = serializer.save(user=self.request.user)
@@ -308,85 +282,56 @@ class RecetaViewSet(ModelViewSet[Receta]):
         invalidate_recetas_cache(user_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        detail=False,
-        methods=["get"],
-        url_path="grilla",
-        permission_classes=[IsAuthenticated, DjangoModelPermissions],
-    )
+    @action(detail=False, methods=["get"], url_path="grilla", permission_classes=[IsAuthenticated, DjangoModelPermissions])
     def grilla_recetas(self, request: Request) -> Response:
         user = request.user
         search = request.query_params.get("search", "").strip().lower()
 
-        # Admin → sin cache
+        # admin → sin cache
         if self.user_service.is_admin_and_authenticated(request):
             base_qs = Receta.objects.annotate(
-                ingredientes_str=GroupConcat(
-                    F("ingredientes__producto__nombre"), separator=", "
-                ),
-                costo=Round(Sum(
-                    F('ingredientes__producto__precio') *
-                    F('ingredientes__cantidad') /
-                    F('ingredientes__producto__cantidad')
-                ), 2),
-                costo_unidad=Round(
-                    Sum(
-                        F('ingredientes__producto__precio') *
-                        F('ingredientes__cantidad') /
-                        F('ingredientes__producto__cantidad')
-                    ) / F('rinde'), 2
-                )
+                ingredientes_str=GroupConcat(F("ingredientes__producto__nombre"), separator=", "),
+                costo=Round(Sum(F('ingredientes__producto__precio')*F('ingredientes__cantidad')/F('ingredientes__producto__cantidad')),2),
+                costo_unidad=Round(Sum(F('ingredientes__producto__precio')*F('ingredientes__cantidad')/F('ingredientes__producto__cantidad'))/F('rinde'),2)
             ).order_by("nombre")
             if search:
                 base_qs = base_qs.filter(nombre__icontains=search)
             serializer = RecetaGrillaSerializer(base_qs, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        # Usuario normal → cache
+        # usuario normal → cache
         cache_key = recetas_cache_key(user.id)
         recetas_serializadas = cache.get(cache_key)
+
         if recetas_serializadas is None:
             base_qs = Receta.objects.filter(user=user).annotate(
-                ingredientes_str=GroupConcat(
-                    F("ingredientes__producto__nombre"), separator=", "
-                ),
-                costo=Round(Sum(
-                    F('ingredientes__producto__precio') *
-                    F('ingredientes__cantidad') /
-                    F('ingredientes__producto__cantidad')
-                ), 2),
-                costo_unidad=Round(
-                    Sum(
-                        F('ingredientes__producto__precio') *
-                        F('ingredientes__cantidad') /
-                        F('ingredientes__producto__cantidad')
-                    ) / F('rinde'), 2
-                )
+                ingredientes_str=GroupConcat(F("ingredientes__producto__nombre"), separator=", "),
+                costo=Round(Sum(F('ingredientes__producto__precio')*F('ingredientes__cantidad')/F('ingredientes__producto__cantidad')),2),
+                costo_unidad=Round(Sum(F('ingredientes__producto__precio')*F('ingredientes__cantidad')/F('ingredientes__producto__cantidad'))/F('rinde'),2)
             ).order_by("nombre")
-            serializer = RecetaGrillaSerializer(base_qs, many=True)
-            recetas_serializadas = serializer.data
+            recetas_serializadas = RecetaGrillaSerializer(base_qs, many=True).data
             cache.set(cache_key, recetas_serializadas, CACHE_TTL_RECETAS)
 
-        # Filtrar búsqueda sobre cache
+        # búsqueda sobre cache
         if search:
-            recetas_serializadas = [
-                r for r in recetas_serializadas if search in r["nombre"].lower()
-            ]
+            recetas_serializadas = [r for r in recetas_serializadas if search in r["nombre"].lower()]
 
-        return Response(recetas_serializadas, status=status.HTTP_200_OK)
+        return Response({"count": len(recetas_serializadas), "results": recetas_serializadas})
 
 
+# ───── DASHBOARD ─────
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
         user_id = request.user.id
         if user_id is None:
-            raise ValueError("Authenticated user must have un ID")
-        totals = UserTotalsCache().get(int(user_id))
+            raise ValueError("Authenticated user must have an ID")
+        totals = UserTotalsCache().get(user_id)
         return Response(totals)
 
 
+# ───── MOVIMIENTOS ─────
 class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
     queryset = MovimientoDeStock.objects.prefetch_related("detalles__producto").all()
     serializer_class = MovimientoDeStockSerializer
@@ -395,21 +340,19 @@ class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
 
     def get_queryset(self) -> QuerySet[MovimientoDeStock]:
         qs = super().get_queryset().order_by("-fecha")
-
         if not self.user_service.is_admin_and_authenticated(self.request):
-            qs = qs.filter(
-                user=self.user_service.get_authenticated_user(self.request)
-            )
+            qs = qs.filter(user=self.user_service.get_authenticated_user(self.request))
         return qs
 
     def perform_create(self, serializer: BaseSerializer[MovimientoDeStock]) -> None:
         serializer.save(user=self.request.user)
 
-    def destroy(self, request: Request, *args: object, **kwargs: object) -> Response:
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
         instance = self.get_object()
-        instance.delete()  # esto borra también los detalles por CASCADE
+        instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    # Aquí van las actions de Excel, PDF y Acumulados igual que tu código original...
     @action(
         detail=False,
         methods=["get"],
