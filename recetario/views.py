@@ -1,4 +1,4 @@
-from typing import Type
+lofrom typing import Type
 
 from django.db.models import (
     Case,
@@ -37,6 +37,9 @@ from weasyprint import HTML
 from recetario.group_concat import GroupConcat
 from users.service import UserService
 
+from django.core.cache import cache
+from math import ceil
+
 
 from .models import (
     Ingrediente,
@@ -56,6 +59,16 @@ from .serializers import (
     MovimientoDeStockSerializer,
 )
 from .user_totals_cache import UserTotalsCache
+
+CACHE_TTL_PRODUCTOS = 60 * 6  # 6 minutos
+
+def productos_cache_key(user_id: int, filtro_stock: str | None) -> str:
+    return f"productos:list:u{user_id}:f{filtro_stock or 'all'}"
+
+
+def invalidate_productos_cache(user_id: int) -> None:
+    for f in ("all", "sin_stock", "bajo_stock", "con_stock"):
+        cache.delete(f"productos:list:u{user_id}:f{f}")
 
 
 # pylint: disable=too-many-ancestors
@@ -102,8 +115,49 @@ class ProductoViewSet(ModelViewSet[Producto]):
     user_service = UserService()
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
 
-    def get_queryset(self) -> QuerySet[Producto]:
-        queryset = super().get_queryset().order_by("nombre")
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        user = request.user
+        filtro_stock = request.query_params.get("filtro_stock")
+        page = int(request.query_params.get("page", 1))
+        page_size = int(request.query_params.get("page_size", 12))
+
+        # 🔴 Admin → sin cache
+        if self.user_service.is_admin_and_authenticated(request):
+            qs = self._build_queryset(request)
+            total = qs.count()
+            start = (page - 1) * page_size
+            end = start + page_size
+            serializer = self.get_serializer(qs[start:end], many=True)
+
+            return Response({
+                "count": total,
+                "page": page,
+                "page_size": page_size,
+                "results": serializer.data,
+            })
+
+        # 🟢 Usuario normal → cache
+        cache_key = productos_cache_key(user.id, filtro_stock)
+        productos_serializados = cache.get(cache_key)
+
+        if productos_serializados is None:
+            qs = self._build_queryset(request)
+            productos_serializados = ProductoSerializer(qs, many=True).data
+            cache.set(cache_key, productos_serializados, CACHE_TTL_PRODUCTOS)
+
+        total = len(productos_serializados)
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        return Response({
+            "count": total,
+            "page": page,
+            "page_size": page_size,
+            "results": productos_serializados[start:end],
+        })
+
+    def _build_queryset(self, request: Request) -> QuerySet[Producto]:
+        queryset = Producto.objects.order_by("nombre")
 
         stock_calculation = Sum(
             Case(
@@ -120,18 +174,14 @@ class ProductoViewSet(ModelViewSet[Producto]):
         )
 
         queryset = queryset.annotate(
-            stock_actual=Coalesce(
-                stock_calculation, Value(0.0), output_field=FloatField()
-            )
+            stock_actual=Coalesce(stock_calculation, Value(0.0))
         )
 
-        if self.user_service.is_admin_and_authenticated(self.request):
-            queryset = queryset.filter(
-                user=self.user_service.get_authenticated_user(self.request)
-            )
+        queryset = queryset.filter(
+            user=self.user_service.get_authenticated_user(request)
+        )
 
-        filtro_stock = self.request.query_params.get("filtro_stock")
-
+        filtro_stock = request.query_params.get("filtro_stock")
         if filtro_stock == "sin_stock":
             queryset = queryset.filter(stock_actual__lte=0)
         elif filtro_stock == "bajo_stock":
@@ -143,20 +193,33 @@ class ProductoViewSet(ModelViewSet[Producto]):
             queryset = queryset.filter(stock_actual__gt=0)
 
         return queryset.annotate(
-            has_ingrediente=Exists(Ingrediente.objects.filter(unidad=OuterRef("pk"))),
+            has_ingrediente=Exists(
+                Ingrediente.objects.filter(producto=OuterRef("pk"))
+            )
         )
 
+    # 🔁 INVALIDACIONES
     def perform_create(self, serializer: BaseSerializer[Producto]) -> None:
-        serializer.save(user=self.request.user)
+        producto = serializer.save(user=self.request.user)
+        invalidate_productos_cache(producto.user_id)
 
-    def destroy(self, request: Request, *args: object, **kwargs: object) -> Response:
+    def perform_update(self, serializer: BaseSerializer[Producto]) -> None:
+        producto = serializer.save()
+        invalidate_productos_cache(producto.user_id)
+
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
         instance = self.get_object()
+
         if Ingrediente.objects.filter(producto=instance).exists():
             return Response(
                 {"detail": "El producto está en uso y no se puede borrar."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        user_id = instance.user_id
         instance.delete()
+        invalidate_productos_cache(user_id)
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
