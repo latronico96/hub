@@ -1,4 +1,4 @@
-okfrom typing import Type
+from typing import Type
 
 from django.db.models import (
     Case,
