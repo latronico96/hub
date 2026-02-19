@@ -56,6 +56,36 @@ from .serializers import (
 from .user_totals_cache import UserTotalsCache
 
 
+class CustomPagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+    def paginate_queryset(self, queryset, request, view=None):
+        if "page" not in request.query_params:
+            self.page = None
+            self.request = request
+            self.queryset = queryset
+            return list(queryset)
+
+        return super().paginate_queryset(queryset, request, view)
+
+    def get_paginated_response(self, data):
+        if self.page is None:
+            return Response({
+                "count": len(data),
+                "page": 1,
+                "page_size": len(data),
+                "results": data,
+            })
+
+        return Response({
+            "count": self.page.paginator.count,
+            "page": self.page.number,
+            "page_size": self.get_page_size(self.request),
+            "results": data,
+        })
+
 # pylint: disable=too-many-ancestors
 class UnidadViewSet(ModelViewSet[Unidad]):
     queryset = Unidad.objects.all()
@@ -99,6 +129,7 @@ class ProductoViewSet(ModelViewSet[Producto]):
     serializer_class = ProductoSerializer
     user_service = UserService()
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
+    pagination_class = CustomPagination
 
     def get_queryset(self) -> QuerySet[Producto]:
         queryset = super().get_queryset().order_by("nombre")
@@ -165,6 +196,7 @@ class RecetaViewSet(ModelViewSet[Receta]):
     serializer_class = RecetaSerializer
     user_service = UserService()
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
+    pagination_class = CustomPagination
 
     def get_queryset(self) -> QuerySet[Receta]:
         if self.user_service.is_admin_and_authenticated(self.request):
@@ -207,7 +239,19 @@ class RecetaViewSet(ModelViewSet[Receta]):
             )
 
         serializer = RecetaGrillaSerializer(recetas, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        page = self.paginate_queryset(base_queryset)
+        if page is not None:
+            serializer = RecetaGrillaSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        # Si no hay página en el query param, pero quieres la MISMA interfaz:
+        serializer = RecetaGrillaSerializer(recetas, many=True)
+        return Response({
+            "count": recetas.count(),
+            "next": None,
+            "previous": None,
+            "results": serializer.data
+        })
 
 
 class DashboardView(APIView):
