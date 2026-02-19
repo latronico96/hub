@@ -147,18 +147,28 @@ class ProductoViewSet(ModelViewSet[Producto]):
     serializer_class = ProductoSerializer
     user_service = UserService()
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
-    pagination_class = PageNumberPagination
 
     def list(self, request: Request, *args, **kwargs) -> Response:
         user = request.user
         search = request.query_params.get("search")
         filtro_stock = request.query_params.get("filtro_stock")
-        page = int(request.query_params.get("page", 1))
-        page_size = int(request.query_params.get("page_size", 12))
+
+        page_param = request.query_params.get("page")
+        page_size_param = request.query_params.get("page_size")
+
+        paginate = page_param is not None
+        page = int(page_param) if paginate else None
+        page_size = int(page_size_param) if paginate and page_size_param else None
 
         # admin → sin cache
         if self.user_service.is_admin_and_authenticated(request):
             qs = self._build_queryset(request)
+            if not paginate:
+                serializer = self.get_serializer(qs, many=True)
+                return Response({
+                    "count": qs.count(),
+                    "results": serializer.data
+                })
             total = qs.count()
             start = (page - 1) * page_size
             end = start + page_size
@@ -179,8 +189,12 @@ class ProductoViewSet(ModelViewSet[Producto]):
             productos_serializados = ProductoSerializer(qs, many=True).data
             cache.set(cache_key, productos_serializados, CACHE_TTL_PRODUCTOS)
 
-        # paginación manual sobre cache
-        # (SEGURO: el cache incluye todos los resultados filtrados)
+        if not paginate:
+            return Response({
+                "count": len(productos_serializados),
+                "results": productos_serializados
+            })
+
         total = len(productos_serializados)
         start = (page - 1) * page_size
         end = start + page_size
