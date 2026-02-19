@@ -376,6 +376,17 @@ class RecetaViewSet(ModelViewSet[Receta]):
         return Response(recetas_serializadas, status=status.HTTP_200_OK)
 
 
+class DashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        user_id = request.user.id
+        if user_id is None:
+            raise ValueError("Authenticated user must have un ID")
+        totals = UserTotalsCache().get(int(user_id))
+        return Response(totals)
+
+
 class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
     queryset = MovimientoDeStock.objects.prefetch_related("detalles__producto").all()
     serializer_class = MovimientoDeStockSerializer
