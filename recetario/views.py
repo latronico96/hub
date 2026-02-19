@@ -1,46 +1,47 @@
-# Fixed cache implementation for UnidadViewSet, RecetaViewSet grilla_recetas, and ProductoViewSet PDF exports with user filtering.
+import datetime
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.response import Response
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from .models import Unidad, Producto, Receta
+from .serializers import UnidadSerializer, ProductoSerializer, RecetaSerializer
 
-# UnidadViewSet
-class UnidadViewSet(viewsets.ModelViewSet):
+CACHE_TTL = 60 * 15  # 15 minutes
+
+class UnidadViewSet(ModelViewSet):
     queryset = Unidad.objects.all()
     serializer_class = UnidadSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        # Filter this user's unidades
-        return self.queryset.filter(user=user)
+        return self.queryset  # Returning the actual queryset
 
-# RecetaViewSet
-class RecetaViewSet(viewsets.ModelViewSet):
-    queryset = Receta.objects.all()
-    serializer_class = RecetaSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-        # Filter this user's recetas
-        return self.queryset.filter(user=user)
-
-# grilla_recetas
-@api_view(['GET'])
-def grilla_recetas(request):
-    user = request.user
-    recetas = Receta.objects.filter(user=user)  # Properly filtering by user
-    serializer = RecetaSerializer(recetas, many=True)
-    return Response(serializer.data)
-
-# ProductoViewSet PDF exports
-class ProductoViewSet(viewsets.ModelViewSet):
+class ProductoViewSet(ModelViewSet):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        # Filter products by user for PDF exports
-        return self.queryset.filter(user=user)
+    @method_decorator(cache_page(CACHE_TTL))
+    def list(self, request, *args, **kwargs):
+        user_products = self.queryset.filter(user=request.user)
+        return Response(ProductoSerializer(user_products, many=True).data)
 
-    @action(detail=False, methods=['get'])
-    def export_pdf(self, request):
-        user = request.user
-        productos = self.get_queryset()  # Returns user's productos
-        # Logic for generating PDF
-        return Response({'message': 'PDF exported successfully!'});
+class RecetaViewSet(ModelViewSet):
+    queryset = Receta.objects.all()
+    serializer_class = RecetaSerializer
+
+    @method_decorator(cache_page(CACHE_TTL))
+    def list(self, request, *args, **kwargs):
+        cache_key = f'recetas_grilla_user_{request.user.id}'
+        # Add logic to handle caching
+        return Response(self.serializer_class(self.queryset, many=True).data)
+
+class MovimientoStockViewSet(ModelViewSet):
+    # Implementation for MovimientoStock
+    pass
+
+class PreventaViewSet(ModelViewSet):
+    # Implementation for Preventa
+    pass
+
+class DashboardView(ModelViewSet):
+    # Implementation for Dashboard
+    pass
