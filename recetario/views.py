@@ -140,42 +140,19 @@ class ProductoViewSet(ModelViewSet[Producto]):
     serializer_class = ProductoSerializer
     user_service = UserService()
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
-    
+
     def _build_queryset(self, request: Request) -> QuerySet[Producto]:
-        queryset = Producto.objects.filter(
+        return Producto.objects.filter(
             user=self.user_service.get_authenticated_user(request)
         ).order_by("nombre")
-
-        stock_calculation = Sum(
-            Case(
-                When(
-                    detalles_de_movimiento__movimiento__tipo="ENTRADA",
-                    then=F("detalles_de_movimiento__cantidad"),
-                ),
-                When(
-                    detalles_de_movimiento__movimiento__tipo="SALIDA",
-                    then=-1 * F("detalles_de_movimiento__cantidad"),
-                ),
-                output_field=FloatField(),
-            )
-        )
-
-        return queryset.annotate(
-            stock_actual=Coalesce(stock_calculation, Value(0.0)),
-            has_ingrediente=Exists(
-                Ingrediente.objects.filter(producto=OuterRef("pk"))
-            ),
-        )
 
     def list(self, request: Request, *args, **kwargs) -> Response:
         user = request.user
         search = (request.query_params.get("search") or "").strip().lower()
-        filtro_stock = request.query_params.get("filtro_stock")
 
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 12))
 
-        # ───── ADMIN → sin cache ─────
         if self.user_service.is_admin_and_authenticated(request):
             qs = self._build_queryset(request)
             if search:
@@ -191,7 +168,6 @@ class ProductoViewSet(ModelViewSet[Producto]):
                 "results": serializer.data
             })
 
-        # ───── USUARIO NORMAL → cache base ─────
         cache_key = productos_cache_key(user.id)
         productos = cache.get(cache_key)
 
@@ -200,7 +176,6 @@ class ProductoViewSet(ModelViewSet[Producto]):
             productos = ProductoSerializer(qs, many=True).data
             cache.set(cache_key, productos, CACHE_TTL_PRODUCTOS)
 
-        # ───── filtros en memoria ─────
         resultados = productos
 
         if search:
@@ -209,17 +184,6 @@ class ProductoViewSet(ModelViewSet[Producto]):
                 if search in p["nombre"].lower()
             ]
 
-        if filtro_stock == "sin_stock":
-            resultados = [p for p in resultados if p["stock_actual"] <= 0]
-        elif filtro_stock == "bajo_stock":
-            resultados = [
-                p for p in resultados
-                if 0 < p["stock_actual"] <= p["stock_minimo"]
-            ]
-        elif filtro_stock == "con_stock":
-            resultados = [p for p in resultados if p["stock_actual"] > 0]
-
-        # ───── paginación ─────
         total = len(resultados)
         start = (page - 1) * page_size
         end = start + page_size
