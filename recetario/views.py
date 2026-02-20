@@ -150,6 +150,8 @@ class ProductoViewSet(ModelViewSet[Producto]):
         user = request.user
         search = (request.query_params.get("search") or "").strip().lower()
 
+        page_param = request.query_params.get("page")
+        page_size_param = request.query_params.get("page_size")
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 12))
 
@@ -157,9 +159,18 @@ class ProductoViewSet(ModelViewSet[Producto]):
             qs = self._build_queryset(request)
             if search:
                 qs = qs.filter(nombre__icontains=search)
+            if page_param is None:
+                serializer = self.get_serializer(qs, many=True)
+                return Response(serializer.data)
+
+            # 🔹 CON paginación
+            page = int(page_param)
+            page_size = int(page_size_param or 12)
+
             total = qs.count()
             start = (page - 1) * page_size
             end = start + page_size
+
             serializer = self.get_serializer(qs[start:end], many=True)
             return Response({
                 "count": total,
@@ -183,6 +194,17 @@ class ProductoViewSet(ModelViewSet[Producto]):
                 p for p in resultados
                 if search in p["nombre"].lower()
             ]
+        if page_param is None:
+            return Response({
+                "count": len(resultados),
+                "page": 1,
+                "page_size": len(resultados),
+                "results": resultados
+            })
+
+        # 🔹 CON paginación
+        page = int(page_param)
+        page_size = int(page_size_param or 12)
 
         total = len(resultados)
         start = (page - 1) * page_size
