@@ -14,7 +14,7 @@ from django.db.models import (
     TextField,
     DecimalField,
 )
-from django.db.models.functions import Round, Coalesce, Concat, Cast
+from django.db.models.functions import Round, Concat, Cast
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from openpyxl import Workbook

@@ -2,8 +2,6 @@ from typing import Any, Dict, List
 
 from rest_framework import serializers
 
-from django.db.models import Sum, Case, When, FloatField, F
-
 from .models import (
     Ingrediente,
     MovimientoDetalle,
@@ -65,20 +63,7 @@ class ProductoSerializer(serializers.ModelSerializer[Producto]):
         return not has_ingrediente
 
     def get_stock(self, obj: Producto) -> float:
-        result = (
-            MovimientoDetalle.objects
-            .filter(producto=obj)
-            .aggregate(
-                total_stock=Sum(
-                    Case(
-                        When(movimiento__tipo='ENTRADA', then='cantidad'),
-                        When(movimiento__tipo='SALIDA', then=-1 * F('cantidad')),
-                        output_field=FloatField(),
-                    )
-                )
-            )
-        )
-        return result['total_stock'] or 0.0
+        return 0.0
 
 
 class IngredienteSerializer(serializers.ModelSerializer[Ingrediente]):
