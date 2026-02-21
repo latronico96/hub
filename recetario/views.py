@@ -59,8 +59,8 @@ def productos_cache_key(user_id: int) -> str:
     return f"productos:list:u{user_id}"
 
 
-def recetas_cache_key(user_id: int, search: str | None = None) -> str:
-    return f"recetas:list:u{user_id}:s{search or 'all'}"
+def recetas_cache_key(user_id: int) -> str:
+    return f"recetas:list:u{user_id}"
 
 
 def unidades_cache_key(user_id: int) -> str:
