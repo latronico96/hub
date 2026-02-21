@@ -84,6 +84,9 @@ class Receta(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="recetas")
     precio_unidad = models.FloatField()
     precio = models.FloatField()
+    costo = models.FloatField(default=0)
+    costo_unidad = models.FloatField(default=0)
+    ingredientes_str = models.TextField(blank=True, default="")
 
     def __str__(self) -> str:
         return str(self.nombre)
@@ -93,6 +96,25 @@ class Receta(models.Model):
         verbose_name_plural = "Recetas"
         ordering = ["nombre"]
         permissions: list[Permission] = []
+
+    def recalcular_grilla(self):
+        ingredientes = self.ingredientes.select_related("producto")
+
+        total = 0
+        nombres = []
+
+        for i in ingredientes:
+            if i.producto.cantidad > 0:
+                total += (
+                    i.producto.precio * i.cantidad / i.producto.cantidad
+                )
+            nombres.append(i.producto.nombre)
+
+        self.costo = round(total, 2)
+        self.costo_unidad = round(total / self.rinde, 2) if self.rinde else 0
+        self.ingredientes_str = ", ".join(nombres)
+
+        self.save(update_fields=["costo", "costo_unidad", "ingredientes_str"])
 
 
 class Ingrediente(models.Model):
@@ -224,4 +246,3 @@ class PreventaDetalle(models.Model):
 
     def __str__(self):
         return f"{self.producto.nombre} x {self.cantidad}"
-

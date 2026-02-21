@@ -107,6 +107,7 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
             ingrediente_data["user"] = user
             Ingrediente.objects.create(receta=receta, **ingrediente_data)
 
+        receta.recalcular_grilla()
         return receta
 
     def update(self, instance: Receta, validated_data: Dict[str, Any]) -> Receta:
@@ -156,14 +157,12 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
                     unidad=ingrediente_data["unidad"],
                     user=user,
                 )
-
+        instance.recalcular_grilla()
         return instance
 
 
 class RecetaGrillaSerializer(serializers.ModelSerializer[Receta]):
     ingredientes = serializers.CharField(source="ingredientes_str", read_only=True)
-    costo_unidad = serializers.FloatField(read_only=True)
-    costo = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Receta

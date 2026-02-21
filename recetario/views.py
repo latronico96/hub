@@ -14,7 +14,7 @@ from django.db.models import (
     TextField,
     DecimalField,
 )
-from django.db.models.functions import Round, Concat, Cast
+from django.db.models.functions import Concat, Cast
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from openpyxl import Workbook
@@ -33,7 +33,6 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from weasyprint import HTML
 
-from recetario.group_concat import GroupConcat
 from users.service import UserService
 
 from django.core.cache import cache
@@ -323,18 +322,15 @@ class RecetaViewSet(ModelViewSet[Receta]):
 
         # admin → sin cache
         if self.user_service.is_admin_and_authenticated(request):
-            base_qs = Receta.objects.annotate(
-                ingredientes_str=GroupConcat(
-                    F("ingredientes__producto__nombre"), separator=", "
-                ),
-                costo=Round(Sum(
-                    F('ingredientes__producto__precio')*F('ingredientes__cantidad')
-                    / F('ingredientes__producto__cantidad')
-                ), 2),
-                costo_unidad=Round(Sum(
-                    F('ingredientes__producto__precio')*F('ingredientes__cantidad')
-                    / F('ingredientes__producto__cantidad')
-                ) / F('rinde'), 2)
+            base_qs = Receta.objects.only(
+                "id",
+                "nombre",
+                "ingredientes_str",
+                "costo",
+                "costo_unidad",
+                "precio",
+                "precio_unidad",
+                "rinde",
             ).order_by("nombre")
             if search:
                 base_qs = base_qs.filter(nombre__icontains=search)
@@ -346,18 +342,15 @@ class RecetaViewSet(ModelViewSet[Receta]):
         recetas_en_cache = cache.get(cache_key)
 
         if recetas_en_cache is None:
-            base_qs = Receta.objects.filter(user=user).annotate(
-                ingredientes_str=GroupConcat(
-                    F("ingredientes__producto__nombre"), separator=", "
-                ),
-                costo=Round(Sum(
-                    F('ingredientes__producto__precio')*F('ingredientes__cantidad')
-                    / F('ingredientes__producto__cantidad')
-                ), 2),
-                costo_unidad=Round(Sum(
-                    F('ingredientes__producto__precio')*F('ingredientes__cantidad')
-                    / F('ingredientes__producto__cantidad')
-                ) / F('rinde'), 2)
+            base_qs = Receta.objects.filter(user=user).only(
+                "id",
+                "nombre",
+                "ingredientes_str",
+                "costo",
+                "costo_unidad",
+                "precio",
+                "precio_unidad",
+                "rinde",
             ).order_by("nombre")
             recetas_en_cache = RecetaGrillaSerializer(base_qs, many=True).data
             cache.set(cache_key, recetas_en_cache, CACHE_TTL_RECETAS)
@@ -542,7 +535,7 @@ class MovimientoStockViewSet(ModelViewSet[MovimientoDeStock]):
         url_path="pdf_acumulados",
         permission_classes=[IsAuthenticated],
     )
-    def exportar_pdf_productos_acumulados(self, request: Request) -> Response:  
+    def exportar_pdf_productos_acumulados(self, request: Request) -> Response:
         productos = (
             Producto.objects
             .annotate(
