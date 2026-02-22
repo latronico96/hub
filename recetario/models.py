@@ -29,9 +29,7 @@ class Unidad(models.Model):
     @staticmethod
     def crear_unidades_por_defecto_para_usuario(user: User) -> None:
         unidades_por_defecto: List[UnidadPorDefecto] = [
-            {"abreviacion": "kg", "nombre": "Kilogramo"},
             {"abreviacion": "g", "nombre": "Gramo"},
-            {"abreviacion": "l", "nombre": "Litro"},
             {"abreviacion": "ml", "nombre": "Mililitro"},
             {"abreviacion": "unidad", "nombre": "Unidad"},
         ]
