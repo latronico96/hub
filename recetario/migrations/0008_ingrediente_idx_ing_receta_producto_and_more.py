@@ -56,11 +56,4 @@ class Migration(migrations.Migration):
                 name="uniq_unidad_user_abrev",
             ),
         ),
-        migrations.AddConstraint(
-            model_name="unidad",
-            constraint=models.UniqueConstraint(
-                fields=("user", "nombre"),
-                name="uniq_unidad_user_nombre",
-            ),
-        ),
     ]

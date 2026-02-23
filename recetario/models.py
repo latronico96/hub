@@ -30,9 +30,6 @@ class Unidad(models.Model):
             models.UniqueConstraint(
                 fields=['user', 'abreviacion'], name='uniq_unidad_user_abrev'
             ),
-            models.UniqueConstraint(
-                fields=['user', 'nombre'], name='uniq_unidad_user_nombre'
-            ),
         ]
 
     def __str__(self) -> str:
