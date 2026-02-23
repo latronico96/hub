@@ -112,10 +112,12 @@ class UnidadViewSet(ModelViewSet[Unidad]):
     def perform_create(self, serializer: BaseSerializer[Unidad]) -> None:
         unidad = serializer.save(user=self.request.user)
         invalidate_unidades_cache(unidad.user_id)
+        invalidate_productos_cache(unidad.user_id)
 
     def perform_update(self, serializer: BaseSerializer[Unidad]) -> None:
         unidad = serializer.save()
         invalidate_unidades_cache(unidad.user_id)
+        invalidate_productos_cache(unidad.user_id)
 
     def destroy(self, request: Request, *args, **kwargs) -> Response:
         instance = self.get_object()
@@ -130,6 +132,7 @@ class UnidadViewSet(ModelViewSet[Unidad]):
         user_id = instance.user_id
         instance.delete()
         invalidate_unidades_cache(user_id)
+        invalidate_productos_cache(user_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -141,9 +144,14 @@ class ProductoViewSet(ModelViewSet[Producto]):
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
 
     def _build_queryset(self, request: Request) -> QuerySet[Producto]:
-        return Producto.objects.filter(
-            user=self.user_service.get_authenticated_user(request)
-        ).order_by("nombre")
+        return (
+            Producto.objects
+            .filter(
+                user=self.user_service.get_authenticated_user(request)
+            )
+            .select_related('unidad')
+            .order_by("nombre")
+        )
 
     def list(self, request: Request, *args, **kwargs) -> Response:
         user = request.user
@@ -155,7 +163,11 @@ class ProductoViewSet(ModelViewSet[Producto]):
         page_size = int(request.query_params.get("page_size", 12))
 
         if self.user_service.is_admin_and_authenticated(request):
-            qs = self._build_queryset(request)
+            qs = (
+                Producto.objects
+                .select_related('unidad')
+                .order_by("nombre")
+            )
             if search:
                 qs = qs.filter(nombre__icontains=search)
             if page_param is None:
@@ -254,7 +266,11 @@ class RecetaViewSet(ModelViewSet[Receta]):
 
         # admin → sin cache
         if self.user_service.is_admin_and_authenticated(request):
-            qs = Receta.objects.all().order_by("nombre")
+            qs = (
+                Receta.objects
+                .order_by("nombre")
+                .prefetch_related("ingredientes__producto__unidad")
+            )
             if search:
                 qs = qs.filter(nombre__icontains=search)
             total = qs.count()

@@ -2,6 +2,7 @@ from typing import List, TypedDict
 
 from django.contrib.auth.models import Permission
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
 
 from users.models import User
 
@@ -22,6 +23,17 @@ class Unidad(models.Model):
         verbose_name_plural = "Unidades"
         ordering = ["abreviacion"]
         permissions: list[Permission] = []
+        indexes = [
+            models.Index(fields=['user', 'abreviacion'], name='idx_unidad_user_abrev'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'abreviacion'], name='uniq_unidad_user_abrev'
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'nombre'], name='uniq_unidad_user_nombre'
+            ),
+        ]
 
     def __str__(self) -> str:
         return str(self.nombre)
@@ -45,7 +57,7 @@ class Unidad(models.Model):
     def can_be_deleted(self) -> bool:
         return (
             not Producto.objects.filter(unidad=self).exists()
-            or not Ingrediente.objects.filter(unidad=self).exists()
+            and not Ingrediente.objects.filter(unidad=self).exists()
         )
 
 
@@ -68,6 +80,9 @@ class Producto(models.Model):
         verbose_name_plural = "Productos"
         ordering = ["nombre"]
         permissions: list[Permission] = []
+        indexes = [
+            models.Index(fields=['user', 'nombre']),
+        ]
 
     @property
     def can_be_deleted(self) -> bool:
@@ -94,6 +109,22 @@ class Receta(models.Model):
         verbose_name_plural = "Recetas"
         ordering = ["nombre"]
         permissions: list[Permission] = []
+        indexes = [
+            models.Index(fields=['user', 'nombre'], name='idx_receta_user_nombre'),
+            models.Index(fields=['nombre'], name='idx_receta_nombre'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'nombre'],
+                name='uniq_receta_user_nombre'
+            ),
+        ]
+
+        indexes += [GinIndex(
+            fields=['nombre'],
+            name='gin_trgm_receta_nombre',
+            opclasses=['gin_trgm_ops'])
+        ]
 
     def recalcular_grilla(self):
         ingredientes = self.ingredientes.select_related("producto")
@@ -137,6 +168,14 @@ class Ingrediente(models.Model):
     class Meta:
         verbose_name = "Ingrediente"
         verbose_name_plural = "Ingredientes"
+        indexes = [
+            models.Index(fields=['receta', 'producto'], name='idx_ing_receta_producto'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['receta', 'producto'], name='uniq_ing_receta_producto'
+            ),
+        ]
 
 
 class MovimientoDeStock(models.Model):
