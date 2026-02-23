@@ -168,14 +168,6 @@ class Ingrediente(models.Model):
     class Meta:
         verbose_name = "Ingrediente"
         verbose_name_plural = "Ingredientes"
-        indexes = [
-            models.Index(fields=['receta', 'producto'], name='idx_ing_receta_producto'),
-        ]
-        constraints = [
-            models.UniqueConstraint(
-                fields=['receta', 'producto'], name='uniq_ing_receta_producto'
-            ),
-        ]
 
 
 class MovimientoDeStock(models.Model):

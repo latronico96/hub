@@ -13,28 +13,26 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddIndex(
-            model_name="ingrediente",
-            index=models.Index(
-                fields=["receta", "producto"], name="idx_ing_receta_producto"
-            ),
-        ),
+        migrations.RunSQL("CREATE EXTENSION IF NOT EXISTS pg_trgm;"),
+
+        # Producto: mantener índice compuesto (no hay unique equivalente)
         migrations.AddIndex(
             model_name="producto",
             index=models.Index(
-                fields=["user", "nombre"], name="recetario_p_user_id_3fc389_idx"
+                fields=["user", "nombre"],
+                name="recetario_p_user_id_3fc389_idx",
             ),
         ),
+
+        # Receta: índice btree global por nombre (déjalo si lo usás para orden/prefijo)
         migrations.AddIndex(
             model_name="receta",
             index=models.Index(
-                fields=["user", "nombre"], name="idx_receta_user_nombre"
+                fields=["nombre"],
+                name="idx_receta_nombre",
             ),
         ),
-        migrations.AddIndex(
-            model_name="receta",
-            index=models.Index(fields=["nombre"], name="idx_receta_nombre"),
-        ),
+        # Receta: índice GIN trigram para búsquedas icontains
         migrations.AddIndex(
             model_name="receta",
             index=django.contrib.postgres.indexes.GinIndex(
@@ -43,34 +41,26 @@ class Migration(migrations.Migration):
                 opclasses=["gin_trgm_ops"],
             ),
         ),
-        migrations.AddIndex(
-            model_name="unidad",
-            index=models.Index(
-                fields=["user", "abreviacion"], name="idx_unidad_user_abrev"
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name="ingrediente",
-            constraint=models.UniqueConstraint(
-                fields=("receta", "producto"), name="uniq_ing_receta_producto"
-            ),
-        ),
+
         migrations.AddConstraint(
             model_name="receta",
             constraint=models.UniqueConstraint(
-                fields=("user", "nombre"), name="uniq_receta_user_nombre"
+                fields=("user", "nombre"),
+                name="uniq_receta_user_nombre",
             ),
         ),
         migrations.AddConstraint(
             model_name="unidad",
             constraint=models.UniqueConstraint(
-                fields=("user", "abreviacion"), name="uniq_unidad_user_abrev"
+                fields=("user", "abreviacion"),
+                name="uniq_unidad_user_abrev",
             ),
         ),
         migrations.AddConstraint(
             model_name="unidad",
             constraint=models.UniqueConstraint(
-                fields=("user", "nombre"), name="uniq_unidad_user_nombre"
+                fields=("user", "nombre"),
+                name="uniq_unidad_user_nombre",
             ),
         ),
     ]
