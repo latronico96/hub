@@ -25,6 +25,7 @@ class Unidad(models.Model):
         permissions: list[Permission] = []
         indexes = [
             models.Index(fields=['user', 'abreviacion'], name='idx_unidad_user_abrev'),
+            models.Index(fields=['user', 'nombre'], name='idx_unidad_user_nombre'),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -79,7 +80,13 @@ class Producto(models.Model):
         permissions: list[Permission] = []
         indexes = [
             models.Index(fields=['user', 'nombre']),
+            models.Index(fields=['nombre'], name='idx_producto_nombre'),  # nuevo
         ]
+        indexes += [GinIndex(
+            fields=['nombre'],
+            name='gin_trgm_producto_nombre',
+            opclasses=['gin_trgm_ops']
+        )]
 
     @property
     def can_be_deleted(self) -> bool:
