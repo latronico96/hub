@@ -1,7 +1,6 @@
 from typing import Type
-
 from django.core.cache import cache
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Exists, OuterRef
 from rest_framework import status
 from rest_framework.permissions import BasePermission, DjangoModelPermissions
 from rest_framework.request import Request
@@ -27,6 +26,21 @@ class ProductoViewSet(ModelViewSet[Producto]):
     user_service = UserService()
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
 
+    def get_queryset(self) -> QuerySet[Producto]:
+        request = self.request
+        if self.user_service.is_admin_and_authenticated(request):
+            return (
+                Producto.objects
+                .select_related('unidad')
+                .annotate(
+                    has_ingrediente=Exists(
+                        Ingrediente.objects.filter(producto=OuterRef('pk'))
+                    )
+                )
+                .order_by("nombre")
+            )
+        return self._build_queryset(request)
+
     def _build_queryset(self, request: Request) -> QuerySet[Producto]:
         return (
             Producto.objects
@@ -34,6 +48,11 @@ class ProductoViewSet(ModelViewSet[Producto]):
                 user=self.user_service.get_authenticated_user(request)
             )
             .select_related('unidad')
+            .annotate(
+                has_ingrediente=Exists(
+                    Ingrediente.objects.filter(producto=OuterRef('pk'))
+                )
+            )
             .order_by("nombre")
         )
 
@@ -51,6 +70,11 @@ class ProductoViewSet(ModelViewSet[Producto]):
             qs = (
                 Producto.objects
                 .select_related('unidad')
+                .annotate(
+                    has_ingrediente=Exists(
+                        Ingrediente.objects.filter(producto=OuterRef('pk'))
+                    )
+                )
                 .order_by("nombre")
             )
             if search:

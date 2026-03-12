@@ -33,7 +33,16 @@ class UnidadViewSet(ModelViewSet[Unidad]):
     def get_queryset(self) -> QuerySet[Unidad]:
         user = self.request.user
         if self.user_service.is_admin_and_authenticated(self.request):
-            return Unidad.objects.all().order_by("nombre")
+            return (
+                Unidad.objects.all()
+                .order_by("nombre")
+                .annotate(
+                    has_product=Exists(Producto.objects.filter(unidad=OuterRef("pk"))),
+                    has_ingrediente=Exists(
+                        Ingrediente.objects.filter(unidad=OuterRef("pk"))
+                    ),
+                )
+            )
 
         return (
             Unidad.objects.filter(user=user)

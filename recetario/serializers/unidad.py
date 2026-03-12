@@ -16,8 +16,8 @@ class UnidadSerializer(serializers.ModelSerializer[Unidad]):
         has_ingrediente = getattr(obj, "has_ingrediente", None)
 
         if has_product is None:
-            has_product = Producto.objects.filter(unidad=obj).exists()
+            has_product = Producto.objects.filter(unidad_id=obj.id).exists()
         if has_ingrediente is None:
-            has_ingrediente = Ingrediente.objects.filter(unidad=obj).exists()
+            has_ingrediente = Ingrediente.objects.filter(unidad_id=obj.id).exists()
 
         return not (has_product or has_ingrediente)

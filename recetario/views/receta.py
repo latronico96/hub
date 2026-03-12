@@ -33,6 +33,22 @@ class RecetaViewSet(ModelViewSet[Receta]):
     user_service = UserService()
     permission_classes: list[Type[BasePermission]] = [DjangoModelPermissions]
 
+    def get_queryset(self):
+        request = self.request
+        if self.user_service.is_admin_and_authenticated(request):
+            return (
+                Receta.objects
+                .order_by("nombre")
+                .prefetch_related("ingredientes__producto__unidad")
+            )
+        user = request.user
+        return (
+            Receta.objects
+            .filter(user=user)
+            .order_by("nombre")
+            .prefetch_related("ingredientes__producto__unidad")
+        )
+
     # type: ignore[override]
     def list(self, request: Request, *args, **kwargs) -> Response:
         user = request.user
@@ -65,7 +81,11 @@ class RecetaViewSet(ModelViewSet[Receta]):
         recetas_en_cache = cache.get(cache_key)
 
         if recetas_en_cache is None:
-            qs = Receta.objects.filter(user=user).order_by("nombre")
+            qs = (
+                Receta.objects.filter(user=user)
+                .order_by("nombre")
+                .prefetch_related("ingredientes__producto__unidad")
+            )
             recetas_en_cache = RecetaSerializer(qs, many=True).data
             cache.set(cache_key, recetas_en_cache, CACHE_TTL_RECETAS)
 

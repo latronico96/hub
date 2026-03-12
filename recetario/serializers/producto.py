@@ -28,11 +28,8 @@ class ProductoSerializer(serializers.ModelSerializer[Producto]):
     def get_can_be_deleted(self, obj: Producto) -> bool:
         has_ingrediente = getattr(obj, "has_ingrediente", None)
         if has_ingrediente is None:
-            has_ingrediente = Ingrediente.objects.filter(producto=obj).exists()
+            has_ingrediente = Ingrediente.objects.filter(producto_id=obj.id).exists()
         return not has_ingrediente
 
     def get_stock(self, obj: Producto) -> float:
-        # Nota: calcular stock aquí puede generar N+1 queries.
-        # Mantener 0.0 por desempeño  y calcular stock en endpoints/reportes
-        # específicos con anotaciones cuando sea necesario.
         return 0.0
