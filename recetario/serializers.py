@@ -103,9 +103,11 @@ class RecetaSerializer(serializers.ModelSerializer[Receta]):
         receta = Receta.objects.create(**validated_data)
         user = self.context["request"].user
 
-        for ingrediente_data in ingredientes_data:
-            ingrediente_data["user"] = user
-            Ingrediente.objects.create(receta=receta, **ingrediente_data)
+        ingredientes = [
+            Ingrediente(receta=receta, user=user, **ingrediente_data)
+            for ingrediente_data in ingredientes_data
+        ]
+        Ingrediente.objects.bulk_create(ingredientes)
 
         receta.recalcular_grilla()
         return receta

@@ -1,13 +1,10 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-
-from .views import (
-    DashboardView,
-    ProductoViewSet,
-    RecetaViewSet,
-    UnidadViewSet,
-    MovimientoStockViewSet,
-)
+from .views.unidad import UnidadViewSet
+from .views.producto import ProductoViewSet
+from .views.receta import RecetaViewSet
+from .views.movimiento_stock import MovimientoStockViewSet
+from .views.dashboard import DashboardView
 
 router = DefaultRouter()
 router.register(r"unidades", UnidadViewSet, basename="unidades")
